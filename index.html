@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Auto-Discovery — TTT-Discover Analysis &amp; Methods</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav>
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab active" href="index.html">Overview</a>
+  <a class="tab" href="analysis.html">Analysis</a>
+  <a class="tab" href="methods.html">Methods</a>
+</nav>
+
+<main>
+  <section class="hero">
+    <h1>Auto-Discovery dashboard</h1>
+    <div class="tagline">
+      Analysis &amp; methods study of TTT-Discover — test-time RL training with PUCT-driven entropic-advantage RL on three combinatorial discovery tasks.
+    </div>
+  </section>
+
+  <div class="grid-3">
+    <div class="stat">
+      <div class="label">Tasks studied</div>
+      <div class="value">3</div>
+      <div class="delta dim">erdos · AC1 · AC2</div>
+    </div>
+    <div class="stat">
+      <div class="label">Methods built</div>
+      <div class="value">2 + 2</div>
+      <div class="delta dim">rep-novelty · CVT-MAP-Elites + 2 hybrids</div>
+    </div>
+    <div class="stat">
+      <div class="label">Production runs</div>
+      <div class="value">20+</div>
+      <div class="delta dim">7 baseline · 3 rep-novelty · 5 QD · 5+ Phase-A</div>
+    </div>
+    <div class="stat">
+      <div class="label">Cross-task figures</div>
+      <div class="value">34</div>
+      <div class="delta dim">H1-H4 + D1-D7 + best-reward</div>
+    </div>
+    <div class="stat">
+      <div class="label">Best erdos C₅</div>
+      <div class="value">0.380965</div>
+      <div class="delta good">+0.000089 to 0.380876 frontier</div>
+    </div>
+    <div class="stat">
+      <div class="label">Best AC1 (lower=better)</div>
+      <div class="value">1.5068</div>
+      <div class="delta good">rep-novelty, beats baseline by 0.0018</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card glow">
+      <h3>Analysis findings</h3>
+      <p>The diagnostic study of TTT-Discover. Four headline weaknesses (H1-H4) backed by seven detailed mechanisms (D1-D7), plus the "actively un-learning" pathology on AC2.</p>
+      <p><strong>What you'll find:</strong> why TTT-Discover commits to a single search lineage, why its built-in exploration term self-disables, and the local-vs-global exploration split that motivates every method we built.</p>
+      <a class="cta" href="analysis.html">Read the analysis →</a>
+    </div>
+
+    <div class="card glow">
+      <h3>Methods experiments</h3>
+      <p>Two new selection methods built from the analysis, run head-to-head against PUCT-knob ablations on all three tasks.</p>
+      <p><strong>Rep-novelty PUCT bonus</strong> — additive elliptical-leverage novelty term in selection. <strong>CVT-MAP-Elites QD archive</strong> — replaces the lineage buffer with a behavior-cell archive. Plus two hybrids and a planned full-batch reproduction.</p>
+      <a class="cta" href="methods.html">Read the methods report →</a>
+    </div>
+  </div>
+
+  <h2>Quick story</h2>
+
+  <div class="callout">
+    <strong>The shape of the problem.</strong> Every TTT-Discover baseline commits to one root lineage by step ~10-20 and exploits it for the rest of training. The PUCT exploration term decays to zero faster than Q grows. The policy keeps producing diverse rollouts per step, but always around the same point in representation space.
+  </div>
+
+  <div class="callout">
+    <strong>What the methods did.</strong> Rep-novelty injects an independent exploration signal into selection — wins AC1 cleanly. QD-archive replaces the lineage buffer with a behavior-cell archive — wins erdos, narrowly. Neither helps AC2 (the "active unlearning" task).
+  </div>
+
+  <div class="callout warn">
+    <strong>The caveat we discovered later.</strong> The whole diagnostic was at 64 rollouts/step. At paper-spec 512 rollouts/step (Phase A, currently running), the bare baseline reaches 0.380965 on erdos — better than every method we tested at 64 rollouts. The "method wins" may have been measuring a weaker baseline, not a stronger method. The H1-H4 mechanisms are still real per-step phenomena; their *practical cost* may shrink at proper batch.
+  </div>
+
+  <h2>Layout of this site</h2>
+  <ul>
+    <li><a href="analysis.html"><strong>Analysis</strong></a> — diagnostic study writeup (H1-H4, D1-D7), per-task tables, 34 cross-task overlay plots.</li>
+    <li><a href="methods.html"><strong>Methods</strong></a> — both new selection methods, mechanisms, results vs baselines and ablations, final leaderboards.</li>
+  </ul>
+</main>
+
+<footer>
+  Built from <code>scripts/analysis/FINDINGS.md</code>, <code>METHODS_FINDINGS.md</code>, <code>CROSS_TASK_PLOTS.md</code> + 34 cross-task overlay figures.
+  · Repo: <code>github.com/EdwardoSunny/rep-ttt</code> on <code>method-rep-novelty</code>.
+</footer>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Methods · Auto-Discovery</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav>
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="index.html">Overview</a>
+  <a class="tab" href="analysis.html">Analysis</a>
+  <a class="tab active" href="methods.html">Methods</a>
+</nav>
+
+<main>
+  <h1>Methods experiments</h1>
+  <div class="subtitle">
+    Two selection methods built from the analysis findings, run head-to-head against PUCT-knob ablations on all three tasks. Two hybrids implemented but pending compute.
+  </div>
+
+  <h2>Method 1 — Rep-novelty PUCT bonus</h2>
+
+  <h3>Mechanism</h3>
+  <div class="card">
+<pre>score(i) = Q(i) + puct_c · scale · P(i) · √(1+T)/(1+n[i])      # existing PUCT
+                + puct_c_rep · scale · z(novelty(i))            # ← new additive term</pre>
+    <p><code>novelty(i)</code>:</p>
+    <ol>
+      <li><strong>Frozen encoder</strong>: rollout response → Qwen3-8B with LoRA <em>disabled</em> (so the encoder doesn't drift during training) → mean-pool last-layer hidden state → 3584-d</li>
+      <li><strong>Compress to 64-d</strong> via sparse random projection (Li et al. 2006, density <code>1/√d_in</code>, no fitting needed)</li>
+      <li><strong>Maintain online elliptical covariance</strong>: <code>A = λI + Σ γ^(T-t) hₜhₜᵀ</code> with γ=0.97 decay</li>
+      <li><strong>Score</strong>: <code>novelty(i) = √(hᵀ A⁻¹ h)</code> — LinUCB / OFUL confidence width</li>
+      <li><strong>Robust-standardize</strong> across candidates (median/MAD) → <code>nov_z</code></li>
+    </ol>
+    <p>Tracker observes every picked state, so the next selection's novelties are computed against past picks. Code: <code>ttt_discover/methods/rep_novelty.py</code>.</p>
+  </div>
+
+  <h3>Why it should work</h3>
+  <ul>
+    <li><strong>D6</strong>: reward ⊥ novelty (Kendall τ ≈ 0) — bonus injects independent signal</li>
+    <li><strong>H3</strong>: scaled by <code>scale</code> (the candidate value range) so it survives standardization against Q</li>
+    <li><strong>H4b/d</strong>: novelty rewards picks in directions A⁻¹ poorly covers — actively pushes the centroid into new regions</li>
+  </ul>
+
+  <h3>Results (30 epochs, <code>puct_c_rep=1.0, γ=0.97, d=64</code>)</h3>
+  <table>
+    <thead><tr><th>Task</th><th>Best</th><th>vs baseline</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag accent">erdos</span></td><td class="num">0.381272</td><td class="num">+0.000312 better</td><td>3rd place overall; loose-prune (0.381044) and mcts-c=3.0 (0.380983) both beat it</td></tr>
+      <tr class="winner"><td><span class="tag accent">AC1</span></td><td class="num">1.506845</td><td class="num">+0.001783 better</td><td><strong>Best AC1 result of any variant</strong>; also less monomorphic (75.8% top-1 root vs baseline 92.6%)</td></tr>
+      <tr><td><span class="tag accent">AC2</span></td><td class="num">—</td><td>—</td><td>Cluster Ray-init hang at 10h, no data</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>Split is correlated with reward headroom.</strong> erdos has only 0.0016 headroom to its frontier (brute-force expansion suffices), AC1 has 0.0046 (smart selection genuinely helps).
+  </div>
+
+  <h2>Method 2 — CVT-MAP-Elites QD archive</h2>
+
+  <h3>Mechanism</h3>
+  <p>Replaces PUCT's flat buffer + ancestry-based selection with a behavior-cell archive:</p>
+  <div class="card">
+    <ol>
+      <li><strong>Warmup</strong>: run PUCT for ~5-7 batches until 80 valid (<code>correctness&gt;0</code>) rollouts have descriptors</li>
+      <li><strong>Fit CVT once</strong>: k-means on the 80 descriptors → 64 centroids in 64-d rep space. <em>Centroids frozen for rest of training.</em></li>
+      <li><strong>Each cell keeps one elite</strong>: the highest-reward state whose descriptor falls in that cell</li>
+      <li><strong>Selection</strong>: pick a cell via softmax of <code>z(quality)/tau + c_rep·z(cell_novelty)</code>. Cell-novelty reuses the same LinUCB tracker but observes cell centroids of picked parents.</li>
+      <li>The cell's elite becomes the next parent for rollouts</li>
+    </ol>
+    <p>Config: <code>n_cells=64, tau=0.5, c_rep=1.0</code>. Code: <code>ttt_discover/methods/qd_archive.py</code>.</p>
+  </div>
+
+  <h3>Results (50 epochs)</h3>
+  <table>
+    <thead><tr><th>Task</th><th>Best</th><th>vs every prior variant</th></tr></thead>
+    <tbody>
+      <tr class="winner"><td><span class="tag accent">erdos</span></td><td class="num">0.380966</td><td><strong>Beat prior leader</strong> mcts-c=3.0 (0.380983) by 0.000017; gap +0.000090 to 0.380876 frontier</td></tr>
+      <tr><td><span class="tag accent">AC1</span></td><td class="num">1.510981</td><td>Worse than baseline (1.5086) and rep-novelty (1.5068)</td></tr>
+      <tr><td><span class="tag accent">AC2</span></td><td class="num">0.930612</td><td>Worse than baseline (0.9358)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Hybrids (built, pending compute)</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>Hybrid 1: QD + high warmup PUCT_C</h4>
+      <p>Same as QD but <code>PUCT_C=3.0</code> during warmup so the seed pool is more diverse before CVT fit. <em>No code change.</em></p>
+      <p><code>scripts/methods/qd_archive/qd_erdos_puctc3.sbatch</code></p>
+    </div>
+    <div class="card">
+      <h4>Hybrid 2: QD + visit-count cell bonus</h4>
+      <p>Adds <code>c_visit · z(√(1+T) / (1+n_select[cell]))</code> to cell-selection logits. Combines QD's behavior-cell exploitation with MCTS-style visit-count exploration.</p>
+      <p><code>qd_archive.py::_visit_term</code>, plumbed via <code>QD_C_VISIT</code></p>
+    </div>
+  </div>
+
+  <h2>Final consolidated leaderboards</h2>
+
+  <h3>ERDOS — minimize C₅ overlap (frontier 0.380876)</h3>
+  <table>
+    <thead><tr><th>Variant</th><th>Epochs</th><th class="mono">C₅ bound</th><th class="mono">Gap</th></tr></thead>
+    <tbody>
+      <tr class="winner"><td>phaseA baseline seed=0 (preliminary)</td><td>50 ep, 512 rollouts</td><td class="num">0.380965</td><td class="num">+0.000089</td></tr>
+      <tr><td>qd-archive</td><td>50 ep, 64 rollouts</td><td class="num">0.380966</td><td class="num">+0.000090</td></tr>
+      <tr><td>mcts-puct_c=3.0</td><td>30 ep, 64 rollouts</td><td class="num">0.380983</td><td class="num">+0.000107</td></tr>
+      <tr><td>loose-prune</td><td>30 ep, 64 rollouts</td><td class="num">0.381044</td><td class="num">+0.000168</td></tr>
+      <tr><td>rep-novelty</td><td>30 ep, 64 rollouts</td><td class="num">0.381272</td><td class="num">+0.000396</td></tr>
+      <tr><td>mcts-puct_c=0.3</td><td>30 ep, 64 rollouts</td><td class="num">0.381355</td><td class="num">+0.000479</td></tr>
+      <tr><td>baseline</td><td>30 ep, 64 rollouts</td><td class="num">0.381584</td><td class="num">+0.000708</td></tr>
+    </tbody>
+  </table>
+  <figure>
+    <img src="figures/cross_task/best_reward_erdos.png" alt="Best reward erdos">
+    <figcaption>Per-step best C₅ bound across all erdos variants. Lower is better. Color = variant.</figcaption>
+  </figure>
+
+  <h3>AC1 — minimize sup‖autocorrelation‖</h3>
+  <table>
+    <thead><tr><th>Variant</th><th>Epochs</th><th class="mono">Best</th></tr></thead>
+    <tbody>
+      <tr class="winner"><td>rep-novelty</td><td>24/30 (timeout)</td><td class="num">1.506845</td></tr>
+      <tr><td>ac1-loose-prune-50</td><td>50/50</td><td class="num">1.507113</td></tr>
+      <tr><td>ac1-baseline-50 (partial)</td><td>step 22/50</td><td class="num">1.507085</td></tr>
+      <tr><td>lineage-blocking-off</td><td>30/30</td><td class="num">1.507528</td></tr>
+      <tr><td>baseline-1</td><td>30/30</td><td class="num">1.508628</td></tr>
+      <tr><td>qd-archive</td><td>50/50</td><td class="num">1.510981</td></tr>
+      <tr><td>ac1-mcts-c=3.0-50</td><td>50/50</td><td class="num">1.515995</td></tr>
+    </tbody>
+  </table>
+  <figure>
+    <img src="figures/cross_task/best_reward_ac1.png" alt="Best reward ac1">
+    <figcaption>Best autocorrelation bound across all AC1 variants. Lower is better. rep-novelty has the smallest value despite truncation.</figcaption>
+  </figure>
+
+  <h3>AC2 — maximize lower bound autocorrelation (frontier 0.97)</h3>
+  <table>
+    <thead><tr><th>Variant</th><th>Epochs</th><th class="mono">Best</th></tr></thead>
+    <tbody>
+      <tr class="winner"><td>baseline-1</td><td>30</td><td class="num">0.935814</td></tr>
+      <tr><td>qd-archive</td><td>50</td><td class="num">0.930612</td></tr>
+    </tbody>
+  </table>
+  <figure>
+    <img src="figures/cross_task/best_reward_ac2.png" alt="Best reward ac2">
+    <figcaption>AC2 is the unbroken task — neither method helped, and the baseline saturated 0.034 below the frontier.</figcaption>
+  </figure>
+
+  <h2>Mechanism-level analysis</h2>
+
+  <p>The methods affected the diagnostic signals in interesting ways:</p>
+  <div class="figure-grid">
+    <figure>
+      <img src="figures/cross_task/puct_share_bonus.png" alt="|bonus|-share over training">
+      <figcaption>Rep-novelty keeps the |bonus|-share elevated where baseline collapses to 0 — the additive novelty term substitutes for PUCT's vanishing structural bonus.</figcaption>
+    </figure>
+    <figure>
+      <img src="figures/cross_task/ancestry_top1_root_frac.png" alt="Top-1 root coverage">
+      <figcaption>AC1 rep-novelty (square markers, green) sits at 75.8% top-1 root vs baseline 92.6% — visibly less monomorphic.</figcaption>
+    </figure>
+  </div>
+
+  <h2>Interpretation</h2>
+  <ol>
+    <li><strong>The diagnostic was correct.</strong> PUCT's structural exploration collapses (H3); search becomes locally entropic (H4a) but globally stuck (H4b-d); reward ⊥ novelty (D6). All four motivate adding a rep-novelty signal.</li>
+    <li><strong>Rep-novelty PUCT bonus works on AC1</strong> (highest headroom among "doable" tasks) — best result of all variants by a clean margin.</li>
+    <li><strong>QD-archive wins erdos</strong> by reframing exploration as cell coverage. Win is small (0.000017 over the next-best variant) and doesn't generalize.</li>
+    <li><strong>AC2 is the broken task</strong> — saturates 0.034 below frontier on every method tried. Active unlearning of useful directions; needs an objective-side intervention, not a selection-side one.</li>
+    <li><strong>No method beat the published 0.380876 frontier on erdos</strong> — closest was qd-archive at 0.380966 (+0.000090 short).</li>
+  </ol>
+
+  <h2>The caveat to all of this</h2>
+  <div class="callout warn">
+    <strong>Batch-size dependency.</strong> Every "method" run above was at 64 rollouts/step (small batch). Phase A is running the baselines at 512 rollouts/step (paper-matched).
+    <ul>
+      <li><strong>erdos baseline at 512 rollouts</strong> already hits 0.380965 — better than every prior method, with <em>no method enabled</em>.</li>
+      <li><strong>This suggests the "method wins" were measuring a weak baseline, not a strong method.</strong> The H1-H4 mechanisms are still real; they just cost less at proper batch.</li>
+      <li><strong>Phase A is currently running</strong> 5 seeds × 3 tasks at full batch + 50 epochs — when it finishes we'll have the actual noise floor for honest method comparison.</li>
+    </ul>
+  </div>
+
+  <h2>Code locations</h2>
+  <div class="card">
+    <p><strong>Methods</strong>: <code>ttt_discover/methods/{rep_novelty,qd_archive}.py</code></p>
+    <p><strong>Sampler integration</strong>: <code>ttt_discover/tinker_utils/sampler.py</code> (<code>_compute_rep_bonus</code>, <code>_qd_sample_states</code>)</p>
+    <p><strong>Sbatch files</strong>: <code>scripts/methods/{rep_novelty,qd_archive}/</code>, <code>scripts/experiments/*_50.sbatch</code>, <code>scripts/experiments/phase_a/</code></p>
+    <p><strong>Analysis</strong>: <code>scripts/analysis/{FINDINGS.md,METHODS_FINDINGS.md,CROSS_TASK_PLOTS.md}</code></p>
+    <p><strong>Branch</strong>: <code>github.com/EdwardoSunny/rep-ttt</code> on <code>method-rep-novelty</code></p>
+  </div>
+</main>
+
+<footer>
+  Source writeup: <code>scripts/analysis/METHODS_FINDINGS.md</code>. Plots from <code>scripts/analysis/cross_run_overlay.py</code>.
+</footer>
+</body>
+</html>

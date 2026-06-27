@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Analysis · Auto-Discovery</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav>
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="index.html">Overview</a>
+  <a class="tab active" href="analysis.html">Analysis</a>
+  <a class="tab" href="methods.html">Methods</a>
+</nav>
+
+<main>
+  <h1>Analysis — what's wrong with TTT-Discover</h1>
+  <div class="subtitle">
+    Diagnostic study on 7 baseline runs across erdos, AC1, AC2. Four headline weaknesses (H1-H4), seven detailed mechanisms (D1-D7), one task-specific pathology (AC2 active unlearning).
+  </div>
+
+  <h2>Setup</h2>
+  <div class="card">
+    <p><strong>Tasks</strong></p>
+    <ul>
+      <li><span class="tag accent">erdos</span> minimize Erdős C₅ overlap bound (lower = better; frontier <code>0.380876</code>)</li>
+      <li><span class="tag accent">AC1</span> minimize sup‖autocorrelation‖ (lower = better; frontier <code>1.503</code>)</li>
+      <li><span class="tag accent">AC2</span> maximize lower-bound autocorrelation (higher = better; frontier <code>0.97</code>)</li>
+    </ul>
+    <p><strong>Config:</strong> Qwen3-8B + LoRA · <code>group_size=16</code>, <code>groups_per_batch=4</code> → <strong>64 rollouts/step</strong> · 30 epochs · PUCT sampler · vLLM + PEFT local backend</p>
+    <p><strong>Runs (7 total):</strong> 4 erdos variants (baseline, <code>loose-prune</code>, <code>mcts c=0.3</code>, <code>c=3.0</code>) · 2 ac1 variants (baseline, <code>lineage-blocking-off</code>) · 1 ac2 baseline</p>
+  </div>
+
+  <h2>Headline findings (H1–H4)</h2>
+
+  <h3>H1. Buffer monomorphism is universal</h3>
+  <p>Every run collapses to one dominant root lineage by step 10-20. The other 3 seeds survive in the buffer but stop getting expanded.</p>
+  <table>
+    <thead><tr><th>Run</th><th>Top-1 root coverage</th><th>Distinct roots</th><th>Monomorphic (80/10)</th></tr></thead>
+    <tbody>
+      <tr><td>erdos-baseline</td><td class="num">84.8%</td><td class="num">4</td><td>YES</td></tr>
+      <tr><td>erdos-loose-prune</td><td class="num">83.7%</td><td class="num">4</td><td>YES</td></tr>
+      <tr><td>erdos-mcts c=0.3</td><td class="num"><strong>95.8%</strong></td><td class="num">4</td><td>YES</td></tr>
+      <tr><td>erdos-mcts c=3.0</td><td class="num">94.3%</td><td class="num">4</td><td>YES</td></tr>
+      <tr><td>ac1-baseline</td><td class="num">92.6%</td><td class="num">4</td><td>YES</td></tr>
+      <tr><td>ac1-noblock</td><td class="num">92.9%</td><td class="num">4</td><td>YES</td></tr>
+      <tr><td>ac2-baseline</td><td class="num">89.1%</td><td class="num">4</td><td>YES</td></tr>
+    </tbody>
+  </table>
+  <figure>
+    <img src="figures/cross_task/ancestry_top1_root_frac.png" alt="Top-1 root coverage over training">
+    <figcaption>Top-1 root coverage rises to 0.85+ on every task within ~10-20 steps. Color = task, linestyle = variant.</figcaption>
+  </figure>
+
+  <h3>H2. PUCT knobs don't fix it</h3>
+  <p>Reward spread across all 4 erdos variants is just <strong>0.0006</strong> (range 0.3810-0.3816). Cranking <code>puct_c</code>, keeping more children, or disabling lineage blocking doesn't break the commitment. The greedy collapse isn't a hyperparameter problem; it's structural.</p>
+  <figure>
+    <img src="figures/cross_task/best_reward_erdos.png" alt="Best reward over training, all erdos variants">
+    <figcaption>All 4 erdos variants converge to within 0.0006 of each other. Same plateau, different paths.</figcaption>
+  </figure>
+
+  <h3>H3. Q dominates the PUCT score by mid-training</h3>
+  <p>The PUCT score is <code>Q + puct_c·scale·P·√(1+T)/(1+n)</code>. The structural exploration term shrinks with <code>√T/n</code> until Q wins.</p>
+  <div class="figure-grid">
+    <figure>
+      <img src="figures/cross_task/puct_share_Q.png" alt="|Q|-share over training">
+      <figcaption>|Q|-share rises from 0.99 → ~0.85-0.97 by step 30 — Q dominates the score.</figcaption>
+    </figure>
+    <figure>
+      <img src="figures/cross_task/puct_share_bonus.png" alt="|bonus|-share over training">
+      <figcaption>|bonus|-share collapses correspondingly. By mid-training, PUCT is effectively greedy on Q.</figcaption>
+    </figure>
+  </div>
+  <div class="callout">
+    <strong>Implication.</strong> Any new exploration signal must be on a scale that survives standardization against Q (i.e., bigger than the structural √T/n term that PUCT lets decay).
+  </div>
+
+  <h3>H4. Local exploration is preserved; global exploration is not (THE key finding)</h3>
+  <p>Four sub-findings all pointing the same way: the policy keeps producing diverse rollouts <em>per step</em> but stops moving the <em>center</em> of those rollouts.</p>
+
+  <h4>H4a — Within-step rollout diversity stays HIGH</h4>
+  <p>Mean pairwise cosine similarity of rollouts within a single step ≈ 0.85 over all 30 steps. Per-step, the policy generates spread-out rollouts on every task.</p>
+  <div class="figure-grid">
+    <figure>
+      <img src="figures/cross_task/tsne_spread.png" alt="Within-step spread">
+      <figcaption>Within-step mean distance to centroid stays roughly flat through training.</figcaption>
+    </figure>
+    <figure>
+      <img src="figures/cross_task/repexp_repr_spread.png" alt="RepExp repr spread">
+      <figcaption>Same finding from RepExp's pairwise-distance metric.</figcaption>
+    </figure>
+  </div>
+
+  <h4>H4b — Cross-step novelty COLLAPSES</h4>
+  <p>Step-to-step centroid drift starts at ~0.04 (early training) and falls to ~0.004 by step 29 — <strong>10× drop</strong>.</p>
+  <figure>
+    <img src="figures/cross_task/d3_drift_from_prev.png" alt="Step-to-step drift">
+    <figcaption>Cross-step drift falls 10× over training. The policy stops moving.</figcaption>
+  </figure>
+
+  <h4>H4c — Cross-step / within-step ratio drops to ~1</h4>
+  <p>Early training: cross-step movement is ~10× the per-step rollout spread. Late training: cross-step movement = within-step noise. <strong>The centroid effectively stops moving relative to per-step noise.</strong></p>
+  <figure>
+    <img src="figures/cross_task/h4c_cross_step_over_within_step.png" alt="H4c ratio">
+    <figcaption>Cross-step / within-step ratio crashes from ~10× to ~1× by step 29.</figcaption>
+  </figure>
+
+  <h4>H4d — Global centroid drift plateaus by step ~10</h4>
+  <p>In post-hoc PCA, the centroid drifts ~0.15 from step 0 by step 10 and never moves further.</p>
+  <figure>
+    <img src="figures/cross_task/tsne_centroid_drift.png" alt="Centroid drift from step 0">
+    <figcaption>Centroid drift from step-0 saturates by step ~10 and stays flat.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <strong>H4 summarized.</strong> The policy explores <em>locally</em> around a committed center, not <em>globally</em> across rep space. It keeps making diverse rollouts in the same neighborhood forever. This is the diagnosis that motivates every method we built.
+  </div>
+
+  <h2>Detailed mechanisms (D1–D7)</h2>
+
+  <div class="figure-grid">
+    <figure>
+      <img src="figures/cross_task/d1_reward_variance_mean.png" alt="D1 reward variance">
+      <figcaption><strong>D1</strong> — within-group reward variance stays meaningful all run. Gradient signal isn't dying.</figcaption>
+    </figure>
+    <figure>
+      <img src="figures/cross_task/d2_ess_mean.png" alt="D2 ESS">
+      <figcaption><strong>D2</strong> — Entropic ESS per group stays above 1. Not a single-rollout-dominates collapse.</figcaption>
+    </figure>
+    <figure>
+      <img src="figures/cross_task/d3_drift_from_step0.png" alt="D3 global drift">
+      <figcaption><strong>D3</strong> — RepExp global drift (re-encoded each step). Plateaus by step ~10, confirming H4d from a different metric.</figcaption>
+    </figure>
+    <figure>
+      <img src="figures/cross_task/d4_cov_frac_in_step0.png" alt="D4 cov in step 0">
+      <figcaption><strong>D4</strong> — Fraction of new rollouts landing in the step-0 cloud rises. Policy is regressing toward its initial neighborhood.</figcaption>
+    </figure>
+    <figure>
+      <img src="figures/cross_task/rank_disagreement_elliptic.png" alt="D6 rank disagreement">
+      <figcaption><strong>D6</strong> — Kendall τ between reward and novelty stays near 0. Reward and novelty are uncorrelated — a novelty bonus carries independent information.</figcaption>
+    </figure>
+    <figure>
+      <img src="figures/cross_task/ancestry_depth_mean.png" alt="depth mean">
+      <figcaption><strong>D7-related</strong> — Mean ancestry depth grows. The single committed lineage gets drilled deeper, not broader.</figcaption>
+    </figure>
+  </div>
+
+  <h2>AC2 — the "actively un-learning" pathology</h2>
+  <p>AC2 is the worst-case TTT-Discover failure mode. The baseline saturated <strong>0.034 below the frontier</strong> (0.9358 vs 0.97), the largest gap of any task. The diagnostic shows it's not just stuck — it's <em>regressing</em>:</p>
+  <ul>
+    <li>Re-encoded <strong>drift</strong> trajectory over training: <code>0 → 0.02 → 0.005-0.008</code> — the centroid moves <em>backward</em> after early progress.</li>
+    <li><strong>Effective rank</strong> of rep covariance drops <code>9.0 → 7.5</code> — the policy loses useful representational directions.</li>
+  </ul>
+  <div class="callout bad">
+    <strong>AC2's failure isn't "couldn't find better" — it's actively un-learning structure it had earlier.</strong> This is qualitatively different from H1-H4 (greedy commitment); it's policy regression.
+  </div>
+
+  <h2>The four weaknesses, distilled</h2>
+  <ul class="findings">
+    <li><span class="h-label">W1</span><strong>Single-lineage commitment.</strong> PUCT picks one root early and depth-fronts it. (H1: 84-96% top-1 root coverage on every task.)</li>
+    <li><span class="h-label">W2</span><strong>PUCT exploration self-disables.</strong> The <code>√(1+T)/(1+n)</code> term shrinks faster than Q grows. (H3: |Q|-share → ~1.0.)</li>
+    <li><span class="h-label">W3</span><strong>Local-only exploration.</strong> Per-step diversity high, cross-step novelty collapses 10×. (H4a vs H4b/c/d.)</li>
+    <li><span class="h-label">W4</span><strong>Active unlearning (AC2).</strong> Policy drift goes <code>0 → 0.02 → 0.005</code> over training; effective rank shrinks. (Task-specific.)</li>
+  </ul>
+
+  <h2>What the analysis says about how to fix it</h2>
+  <div class="card">
+    <p>The analysis is <em>constructive</em> — it tells you exactly what kind of signal would help:</p>
+    <ol>
+      <li><strong>Reward ⊥ novelty (D6)</strong> → a novelty bonus carries independent gradient. Not just another way to chase reward.</li>
+      <li><strong>H4a + H4b</strong> → policies still know HOW to generate diversity, but stop being pushed to NEW regions. A signal that explicitly rewards moving outside the local cloud would address this.</li>
+      <li><strong>H3</strong> → the new signal must scale-survive standardization (bigger than the structural <code>√T/n</code> term that PUCT lets decay).</li>
+      <li><strong>D7</strong> → it's a <em>selection</em> problem, not a population problem. So intervene at sample_states, not at expansion.</li>
+    </ol>
+    <p>This maps directly to the two methods built: <a href="methods.html">read the methods report →</a></p>
+  </div>
+
+  <h2>Important caveat</h2>
+  <div class="callout warn">
+    <strong>Batch-size dependency.</strong> The diagnostic ran at <strong>64 rollouts/step</strong>. Phase A is currently running the same baselines at <strong>512 rollouts/step</strong> (paper-matched). erdos seed=0 in Phase A already reached 0.380965 — better than every method we tested at 64 rollouts.
+    <ul>
+      <li><strong>H1-H4 mechanisms are real per-step</strong> (the math of how PUCT decays is independent of batch size).</li>
+      <li><strong>Their practical cost may shrink at proper batch.</strong> With 8× more rollouts per step, even single-lineage greedy search finds enough good solutions that the commitment matters less.</li>
+      <li><strong>The "method wins" we reported earlier may have been measuring a weaker baseline, not a stronger method.</strong> Phase A is the proper test, currently in flight.</li>
+    </ul>
+  </div>
+</main>
+
+<footer>
+  Source writeups: <code>scripts/analysis/FINDINGS.md</code>, <code>CROSS_TASK_PLOTS.md</code>. 34 cross-task figures generated by <code>scripts/analysis/cross_run_overlay.py</code>.
+</footer>
+</body>
+</html>
