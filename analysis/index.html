@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Analysis — overview · Auto-Discovery</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="../index.html">Overview</a>
+  <a class="tab active" href="../analysis/">Analysis</a>
+  <a class="tab " href="../methods/">Methods</a>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar"><h4>Analysis</h4><ul>
+<li><a class="active" href="index.html"><span class="sidebar-tag">8 experiments</span>Overview</a></li>
+<li><a class="" href="h1-monomorphism.html"><span class="sidebar-tag">H1</span>Buffer monomorphism is universal</a></li>
+<li><a class="" href="h2-knobs.html"><span class="sidebar-tag">H2</span>PUCT knobs don't fix it</a></li>
+<li><a class="" href="h3-q-dominates.html"><span class="sidebar-tag">H3</span>Q dominates the PUCT score</a></li>
+<li><a class="" href="h4-local-vs-global.html"><span class="sidebar-tag">H4</span>Local vs global exploration</a></li>
+<li><a class="" href="d1-d2-learning-signal.html"><span class="sidebar-tag">D1·D2</span>Learning signal stays meaningful</a></li>
+<li><a class="" href="d3-d4-drift-coverage.html"><span class="sidebar-tag">D3·D4</span>Drift &amp; coverage</a></li>
+<li><a class="" href="d6-rank-disagreement.html"><span class="sidebar-tag">D6</span>Reward and novelty are uncorrelated</a></li>
+<li><a class="" href="ac2-unlearning.html"><span class="sidebar-tag">AC2</span>Active un-learning pathology</a></li>
+</ul></aside>
+  <main>
+    <h1>Analysis — overview</h1>
+    
+<div class="subtitle">
+  Diagnostic study on 7 baseline runs across erdos, AC1, AC2 — 8 experiments grouped into headline weaknesses (H1-H4) and detailed mechanisms (D1-D7).
+</div>
+
+<h2>Setup</h2>
+<div class="card">
+  <p><strong>Tasks</strong></p>
+  <ul>
+    <li><span class="tag accent">erdos</span> minimize Erdős C₅ overlap bound (frontier <code>0.380876</code>)</li>
+    <li><span class="tag accent">AC1</span> minimize sup‖autocorrelation‖ (frontier <code>1.503</code>)</li>
+    <li><span class="tag accent">AC2</span> maximize lower-bound autocorrelation (frontier <code>0.97</code>)</li>
+  </ul>
+  <p><strong>Config:</strong> Qwen3-8B + LoRA · <code>group_size=16</code>, <code>groups_per_batch=4</code> → <strong>64 rollouts/step</strong> · 30 epochs · PUCT sampler · vLLM + PEFT</p>
+  <p><strong>Runs (7):</strong> 4 erdos variants (baseline, loose-prune, mcts c=0.3, c=3.0) · 2 ac1 variants (baseline, lineage-blocking-off) · 1 ac2 baseline</p>
+</div>
+
+<h2>Experiments</h2>
+<ul class="findings">
+  <li><span class="h-label">H1</span><a href="h1-monomorphism.html">Buffer monomorphism is universal</a> — every run collapses to 84-96% top-1 root.</li>
+  <li><span class="h-label">H2</span><a href="h2-knobs.html">PUCT knobs don't fix it</a> — 0.0006 spread across all variants.</li>
+  <li><span class="h-label">H3</span><a href="h3-q-dominates.html">Q dominates the PUCT score</a> — exploration term self-disables.</li>
+  <li><span class="h-label">H4</span><a href="h4-local-vs-global.html">Local exploration is preserved; global is not</a> — THE key finding.</li>
+  <li><span class="h-label">D1·D2</span><a href="d1-d2-learning-signal.html">Learning signal stays meaningful</a> — gradient isn't dead.</li>
+  <li><span class="h-label">D3·D4</span><a href="d3-d4-drift-coverage.html">Global drift &amp; coverage of past regions</a> — confirms H4 from independent metrics.</li>
+  <li><span class="h-label">D6</span><a href="d6-rank-disagreement.html">Reward ⊥ novelty</a> — Kendall τ ≈ 0; novelty bonus carries independent information.</li>
+  <li><span class="h-label">AC2</span><a href="ac2-unlearning.html">Active un-learning pathology</a> — policy drifts backward, eff rank shrinks.</li>
+</ul>
+
+<h2>Distilled weaknesses</h2>
+<ul class="findings">
+  <li><span class="h-label">W1</span><strong>Single-lineage commitment.</strong> PUCT picks one root early and depth-fronts it.</li>
+  <li><span class="h-label">W2</span><strong>PUCT exploration self-disables.</strong> <code>√(1+T)/(1+n)</code> shrinks faster than Q grows.</li>
+  <li><span class="h-label">W3</span><strong>Local-only exploration.</strong> Per-step diversity high, cross-step novelty collapses 10×.</li>
+  <li><span class="h-label">W4</span><strong>Active unlearning (AC2).</strong> Policy drift goes <code>0 → 0.02 → 0.005</code>; eff rank <code>9.0 → 7.5</code>.</li>
+</ul>
+
+<div class="callout warn">
+  <strong>Caveat that emerged after publishing.</strong> The diagnostic was at 64 rollouts/step. Phase A (currently running) tests the same baseline at paper-spec 512 rollouts and is already matching the prior method-best on erdos. H1-H4 mechanisms are real per-step phenomena; their <em>practical cost</em> may shrink at proper batch.
+</div>
+
+    <div class="exp-nav"><span></span><a class="next" href="h1-monomorphism.html"><div class="dir">Next →</div><div class="ttl">H1 — Buffer monomorphism is universal</div></a></div>
+  </main>
+</div>
+
+<footer>
+  Repo: <a href="https://github.com/EdwardoSunny/rep-ttt">github.com/EdwardoSunny/rep-ttt</a> on <code>method-rep-novelty</code>.
+</footer>
+</body>
+</html>

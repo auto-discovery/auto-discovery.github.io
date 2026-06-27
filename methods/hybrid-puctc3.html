@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hybrid 1 — QD + high warmup PUCT_C · Auto-Discovery</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="../index.html">Overview</a>
+  <a class="tab " href="../analysis/">Analysis</a>
+  <a class="tab active" href="../methods/">Methods</a>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar"><h4>Methods</h4><ul>
+<li><a class="" href="index.html"><span class="sidebar-tag">5 experiments</span>Overview</a></li>
+<li><a class="" href="rep-novelty.html"><span class="sidebar-tag">Method 1</span>Rep-novelty PUCT bonus</a></li>
+<li><a class="" href="qd-archive.html"><span class="sidebar-tag">Method 2</span>CVT-MAP-Elites QD archive</a></li>
+<li><a class="active" href="hybrid-puctc3.html"><span class="sidebar-tag">Hybrid 1</span>QD + high warmup PUCT_C</a></li>
+<li><a class="" href="hybrid-visit.html"><span class="sidebar-tag">Hybrid 2</span>QD + visit-count cell bonus</a></li>
+<li><a class="" href="leaderboards.html"><span class="sidebar-tag">Summary</span>Cross-task leaderboards</a></li>
+</ul></aside>
+  <main>
+    <div class="exp-header">  <span class="exp-id">Hybrid 1</span>  <span style="color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">EXPERIMENT</span></div><h1>Hybrid 1 — QD + high warmup PUCT_C</h1>
+    
+<div class="subtitle">QD-archive but with <code>PUCT_C=3.0</code> during the warmup phase, so the seed pool is more diverse before the CVT fit. <strong>Built; pending compute.</strong></div>
+
+<h2>Hypothesis</h2>
+<p>QD-archive's quality depends on the CVT centroids, which depend on the 80 warmup descriptors. If warmup is just PUCT with default <code>c=1.0</code>, the seeds cluster around whatever PUCT happens to find first — possibly missing rep-space modes. Cranking <code>c=3.0</code> during warmup biases PUCT toward more diverse exploration, which propagates into more diverse centroids → broader cell coverage → better global search.</p>
+
+<h2>Implementation</h2>
+<div class="card">
+  <p>No code change required — just an env var:</p>
+  <pre>export PUCT_C=3.0
+export QD_ENABLE=1   # everything else as in qd_erdos.sbatch</pre>
+  <p>Sbatch: <code>scripts/methods/qd_archive/qd_erdos_puctc3.sbatch</code>. Standalone job <code>1653761</code>.</p>
+</div>
+
+<h2>Status</h2>
+<div class="callout warn">
+  <strong>Pending compute.</strong> Submitted multiple times; cluster failed each attempt before reaching first batch. No data yet. Will rerun once Phase A finishes.
+</div>
+
+<h2>What we'd measure</h2>
+<ul>
+  <li>Does the CVT cover broader rep-space at fit time? Compare initial-cell-coverage between QD baseline and QD-puctc3.</li>
+  <li>Does the broader CVT translate to better discovery? Best C₅ on erdos.</li>
+  <li>Does it help AC1 / AC2 by giving the cell archive a better seed pool?</li>
+</ul>
+
+    <div class="exp-nav"><a href="qd-archive.html"><div class="dir">← Previous</div><div class="ttl">CVT-MAP-Elites QD archive</div></a><a class="next" href="hybrid-visit.html"><div class="dir">Next →</div><div class="ttl">Hybrid 2 — QD + visit-count cell bonus</div></a></div>
+  </main>
+</div>
+
+<footer>
+  Repo: <a href="https://github.com/EdwardoSunny/rep-ttt">github.com/EdwardoSunny/rep-ttt</a> on <code>method-rep-novelty</code>.
+</footer>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>H4 — Local vs global exploration · Auto-Discovery</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="../index.html">Overview</a>
+  <a class="tab active" href="../analysis/">Analysis</a>
+  <a class="tab " href="../methods/">Methods</a>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar"><h4>Analysis</h4><ul>
+<li><a class="" href="index.html"><span class="sidebar-tag">8 experiments</span>Overview</a></li>
+<li><a class="" href="h1-monomorphism.html"><span class="sidebar-tag">H1</span>Buffer monomorphism is universal</a></li>
+<li><a class="" href="h2-knobs.html"><span class="sidebar-tag">H2</span>PUCT knobs don't fix it</a></li>
+<li><a class="" href="h3-q-dominates.html"><span class="sidebar-tag">H3</span>Q dominates the PUCT score</a></li>
+<li><a class="active" href="h4-local-vs-global.html"><span class="sidebar-tag">H4</span>Local vs global exploration</a></li>
+<li><a class="" href="d1-d2-learning-signal.html"><span class="sidebar-tag">D1·D2</span>Learning signal stays meaningful</a></li>
+<li><a class="" href="d3-d4-drift-coverage.html"><span class="sidebar-tag">D3·D4</span>Drift &amp; coverage</a></li>
+<li><a class="" href="d6-rank-disagreement.html"><span class="sidebar-tag">D6</span>Reward and novelty are uncorrelated</a></li>
+<li><a class="" href="ac2-unlearning.html"><span class="sidebar-tag">AC2</span>Active un-learning pathology</a></li>
+</ul></aside>
+  <main>
+    <div class="exp-header">  <span class="exp-id">H4</span>  <span style="color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">EXPERIMENT</span></div><h1>H4 — Local vs global exploration</h1>
+    
+<div class="subtitle">THE key finding. The policy keeps producing diverse rollouts <em>per step</em>, but stops moving the <em>center</em> of those rollouts in representation space. Four sub-findings (H4a–d) all point the same way.</div>
+
+<h2>H4a — Within-step rollout diversity stays HIGH</h2>
+<p>Mean pairwise cosine similarity of rollouts within a single step ≈ 0.85 over all 30 steps. Per-step the policy generates spread-out rollouts on every task.</p>
+<div class="figure-grid"><figure><img src="../figures/cross_task/tsne_spread.png" alt=""><figcaption>Within-step mean distance to centroid stays roughly flat through training.</figcaption></figure>
+<figure><img src="../figures/cross_task/repexp_repr_spread.png" alt=""><figcaption>Same finding from the RepExp pairwise-distance metric.</figcaption></figure></div>
+
+<h2>H4b — Cross-step novelty COLLAPSES</h2>
+<p>Step-to-step centroid drift starts at ~0.04 and falls to ~0.004 by step 29 — <strong>10× drop</strong>.</p>
+<figure><img src="../figures/cross_task/d3_drift_from_prev.png" alt=""><figcaption>Cross-step drift collapses 10× over training.</figcaption></figure>
+
+<h2>H4c — Cross-step / within-step ratio drops to ~1</h2>
+<p>Early training: cross-step movement is ~10× the within-step rollout spread. Late training: cross-step movement = within-step noise. <strong>The centroid effectively stops moving relative to per-step noise.</strong></p>
+<figure><img src="../figures/cross_task/h4c_cross_step_over_within_step.png" alt=""><figcaption>Cross-step / within-step ratio crashes from ~10× to ~1× by step 29.</figcaption></figure>
+
+<h2>H4d — Global centroid drift plateaus by step ~10</h2>
+<figure><img src="../figures/cross_task/tsne_centroid_drift.png" alt=""><figcaption>Centroid drift from step-0 saturates by step ~10 and stays flat.</figcaption></figure>
+
+<h2>What it means</h2>
+<div class="callout">
+  <strong>The policy explores <em>locally</em> around a committed center, not <em>globally</em> across rep space.</strong> It keeps making diverse rollouts in the same neighborhood forever. This is the diagnosis that motivates every method we built — both rep-novelty (push toward globally-novel reps) and QD-archive (force coverage across behavior cells).
+</div>
+
+    <div class="exp-nav"><a href="h3-q-dominates.html"><div class="dir">← Previous</div><div class="ttl">H3 — Q dominates the PUCT score</div></a><a class="next" href="d1-d2-learning-signal.html"><div class="dir">Next →</div><div class="ttl">D1 + D2 — Learning signal stays meaningful</div></a></div>
+  </main>
+</div>
+
+<footer>
+  Repo: <a href="https://github.com/EdwardoSunny/rep-ttt">github.com/EdwardoSunny/rep-ttt</a> on <code>method-rep-novelty</code>.
+</footer>
+</body>
+</html>

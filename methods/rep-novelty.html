@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rep-novelty PUCT bonus · Auto-Discovery</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="../index.html">Overview</a>
+  <a class="tab " href="../analysis/">Analysis</a>
+  <a class="tab active" href="../methods/">Methods</a>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar"><h4>Methods</h4><ul>
+<li><a class="" href="index.html"><span class="sidebar-tag">5 experiments</span>Overview</a></li>
+<li><a class="active" href="rep-novelty.html"><span class="sidebar-tag">Method 1</span>Rep-novelty PUCT bonus</a></li>
+<li><a class="" href="qd-archive.html"><span class="sidebar-tag">Method 2</span>CVT-MAP-Elites QD archive</a></li>
+<li><a class="" href="hybrid-puctc3.html"><span class="sidebar-tag">Hybrid 1</span>QD + high warmup PUCT_C</a></li>
+<li><a class="" href="hybrid-visit.html"><span class="sidebar-tag">Hybrid 2</span>QD + visit-count cell bonus</a></li>
+<li><a class="" href="leaderboards.html"><span class="sidebar-tag">Summary</span>Cross-task leaderboards</a></li>
+</ul></aside>
+  <main>
+    <div class="exp-header">  <span class="exp-id">Method 1</span>  <span style="color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">EXPERIMENT</span></div><h1>Rep-novelty PUCT bonus</h1>
+    
+<div class="subtitle">Add an elliptical-leverage novelty term to PUCT's selection score. Frozen encoder + sparse projection + LinUCB confidence width.</div>
+
+<h2>Mechanism</h2>
+<div class="card">
+<pre>score(i) = Q(i) + puct_c · scale · P(i) · √(1+T)/(1+n[i])      # existing PUCT
+                + puct_c_rep · scale · z(novelty(i))            # ← new additive term</pre>
+<p><code>novelty(i)</code>:</p>
+<ol>
+  <li><strong>Frozen encoder</strong>: rollout response → Qwen3-8B with LoRA <em>disabled</em> → mean-pool last hidden → 3584-d</li>
+  <li><strong>Compress to 64-d</strong> via sparse random projection (Li et al. 2006, density <code>1/√d_in</code>, no fitting)</li>
+  <li><strong>Online elliptical covariance</strong>: <code>A = λI + Σ γ^(T-t) hₜhₜᵀ</code> with γ=0.97 decay</li>
+  <li><strong>Score</strong>: <code>novelty(i) = √(hᵀ A⁻¹ h)</code> — LinUCB / OFUL confidence width</li>
+  <li><strong>Robust-standardize</strong> across candidates (median/MAD) → <code>nov_z</code></li>
+</ol>
+<p>The tracker observes every picked state, so subsequent selections compute novelty against past picks. Code: <code>ttt_discover/methods/rep_novelty.py</code>.</p>
+</div>
+
+<h2>Why it addresses the diagnosis</h2>
+<ul>
+  <li><strong>D6</strong>: reward ⊥ novelty (τ ≈ 0) — bonus injects independent gradient signal</li>
+  <li><strong>H3</strong>: scaled by <code>scale</code> so it survives standardization against Q</li>
+  <li><strong>H4b/d</strong>: novelty rewards picks in directions A⁻¹ poorly covers — pushes the centroid into new regions</li>
+</ul>
+
+<h2>Results (30 epochs, <code>puct_c_rep=1.0, γ=0.97, d=64</code>)</h2>
+<table>
+  <thead><tr><th>Task</th><th>Best</th><th>vs baseline</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><span class="tag accent">erdos</span></td><td class="num">0.381272</td><td class="num">+0.000312 better</td><td>3rd place; loose-prune (0.381044) and mcts-c=3.0 (0.380983) both beat it</td></tr>
+    <tr class="winner"><td><span class="tag accent">AC1</span></td><td class="num">1.506845</td><td class="num">+0.001783 better</td><td><strong>Best AC1 result of any variant.</strong> Also less monomorphic (75.8% top-1 root vs baseline 92.6%)</td></tr>
+    <tr><td><span class="tag accent">AC2</span></td><td>—</td><td>—</td><td>Cluster Ray-init hang at 10h, no data</td></tr>
+  </tbody>
+</table>
+
+<h2>Evidence the mechanism is biting</h2>
+<figure><img src="../figures/cross_task/puct_share_bonus.png" alt=""><figcaption>Rep-novelty (heavy square marker) keeps the |bonus|-share elevated where baseline collapses to 0 — the additive novelty term substitutes for the vanishing structural PUCT bonus.</figcaption></figure>
+<figure><img src="../figures/cross_task/ancestry_top1_root_frac.png" alt=""><figcaption>AC1 rep-novelty (green square) sits at 75.8% top-1 root coverage vs ac1-baseline (green circle) at 92.6% — visibly less monomorphic.</figcaption></figure>
+<figure><img src="../figures/cross_task/best_reward_ac1.png" alt=""><figcaption>Best reward over training, all AC1 variants. Rep-novelty hits 1.5068 at step ~22 and sustains it — best of any variant.</figcaption></figure>
+
+<h2>Interpretation</h2>
+<div class="callout">
+  <strong>The split is correlated with reward headroom.</strong> erdos has only 0.0016 headroom to the frontier — brute-force expansion (loose-prune) closes the gap by itself. AC1 has 0.0046 headroom — enough room for a smarter selection signal to find new optima. AC2's active unlearning isn't a selection problem, so rep-novelty doesn't help.
+</div>
+
+    <div class="exp-nav"><a href="index.html"><div class="dir">← Previous</div><div class="ttl">Methods overview</div></a><a class="next" href="qd-archive.html"><div class="dir">Next →</div><div class="ttl">CVT-MAP-Elites QD archive</div></a></div>
+  </main>
+</div>
+
+<footer>
+  Repo: <a href="https://github.com/EdwardoSunny/rep-ttt">github.com/EdwardoSunny/rep-ttt</a> on <code>method-rep-novelty</code>.
+</footer>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AC2 — Active un-learning pathology · Auto-Discovery</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="../index.html">Overview</a>
+  <a class="tab active" href="../analysis/">Analysis</a>
+  <a class="tab " href="../methods/">Methods</a>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar"><h4>Analysis</h4><ul>
+<li><a class="" href="index.html"><span class="sidebar-tag">8 experiments</span>Overview</a></li>
+<li><a class="" href="h1-monomorphism.html"><span class="sidebar-tag">H1</span>Buffer monomorphism is universal</a></li>
+<li><a class="" href="h2-knobs.html"><span class="sidebar-tag">H2</span>PUCT knobs don't fix it</a></li>
+<li><a class="" href="h3-q-dominates.html"><span class="sidebar-tag">H3</span>Q dominates the PUCT score</a></li>
+<li><a class="" href="h4-local-vs-global.html"><span class="sidebar-tag">H4</span>Local vs global exploration</a></li>
+<li><a class="" href="d1-d2-learning-signal.html"><span class="sidebar-tag">D1·D2</span>Learning signal stays meaningful</a></li>
+<li><a class="" href="d3-d4-drift-coverage.html"><span class="sidebar-tag">D3·D4</span>Drift &amp; coverage</a></li>
+<li><a class="" href="d6-rank-disagreement.html"><span class="sidebar-tag">D6</span>Reward and novelty are uncorrelated</a></li>
+<li><a class="active" href="ac2-unlearning.html"><span class="sidebar-tag">AC2</span>Active un-learning pathology</a></li>
+</ul></aside>
+  <main>
+    <div class="exp-header">  <span class="exp-id">AC2</span>  <span style="color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">EXPERIMENT</span></div><h1>AC2 — Active un-learning pathology</h1>
+    
+<div class="subtitle">AC2 is the worst-case TTT-Discover failure mode. The baseline saturated <strong>0.034 below the frontier</strong> (0.9358 vs 0.97) — the largest gap of any task. And it's not just stuck — it's <em>regressing</em>.</div>
+
+<h2>The drift trajectory</h2>
+<p>Re-encoded global drift over training on AC2:</p>
+<table>
+  <thead><tr><th>Phase</th><th>Drift from step 0</th></tr></thead>
+  <tbody>
+    <tr><td>Step 0–5</td><td class="num">0 → 0.02</td></tr>
+    <tr><td>Step 5–15</td><td class="num">0.02 (peak)</td></tr>
+    <tr><td>Step 15–30</td><td class="num">0.02 → <strong>0.005–0.008</strong> (regressing!)</td></tr>
+  </tbody>
+</table>
+<p>The centroid moves <em>away</em> from step 0 in early training (good), then moves <em>back toward</em> step 0 in late training (bad). It's losing the representational ground it gained.</p>
+
+<h2>The rank collapse</h2>
+<p>Effective rank of the rep covariance:</p>
+<ul>
+  <li>Early training: <strong>9.0</strong> (out of 64 max — already low)</li>
+  <li>Late training: <strong>7.5</strong> — rank drops 1.5 over training</li>
+</ul>
+<p>The policy actively shrinks the dimensionality of its representation. Useful directions are being un-learned.</p>
+
+<div class="callout bad">
+  <strong>AC2's failure isn't "couldn't find better" — it's actively un-learning structure it had earlier.</strong> This is qualitatively different from H1-H4 (greedy commitment). Both methods we built (rep-novelty, QD-archive) are selection-side interventions — they don't address active unlearning, which is an <em>objective</em>-side problem (KL pressure, β schedule, advantage estimator).
+</div>
+
+<h2>Implications for method work</h2>
+<p>AC2 is the one task where neither rep-novelty nor QD-archive helped. The diagnostic predicts this:</p>
+<ul>
+  <li><strong>Selection-side methods</strong> (both ours) push the policy toward different parents to expand. But if the policy itself is actively shedding useful directions, picking different parents won't recover them.</li>
+  <li><strong>Objective-side fixes</strong> would target <em>why</em> the policy is shrinking — likely a too-large KL/β allowing convergence to a low-rank attractor.</li>
+</ul>
+<p>Future work on AC2 should focus on KL coefficient sweeps, β schedules, and possibly LoRA-island ensembles rather than further selection-side experiments.</p>
+
+    <div class="exp-nav"><a href="d6-rank-disagreement.html"><div class="dir">← Previous</div><div class="ttl">D6 — Reward and novelty are uncorrelated</div></a></div>
+  </main>
+</div>
+
+<footer>
+  Repo: <a href="https://github.com/EdwardoSunny/rep-ttt">github.com/EdwardoSunny/rep-ttt</a> on <code>method-rep-novelty</code>.
+</footer>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>D3 + D4 — Drift & coverage · Auto-Discovery</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="../index.html">Overview</a>
+  <a class="tab active" href="../analysis/">Analysis</a>
+  <a class="tab " href="../methods/">Methods</a>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar"><h4>Analysis</h4><ul>
+<li><a class="" href="index.html"><span class="sidebar-tag">8 experiments</span>Overview</a></li>
+<li><a class="" href="h1-monomorphism.html"><span class="sidebar-tag">H1</span>Buffer monomorphism is universal</a></li>
+<li><a class="" href="h2-knobs.html"><span class="sidebar-tag">H2</span>PUCT knobs don't fix it</a></li>
+<li><a class="" href="h3-q-dominates.html"><span class="sidebar-tag">H3</span>Q dominates the PUCT score</a></li>
+<li><a class="" href="h4-local-vs-global.html"><span class="sidebar-tag">H4</span>Local vs global exploration</a></li>
+<li><a class="" href="d1-d2-learning-signal.html"><span class="sidebar-tag">D1·D2</span>Learning signal stays meaningful</a></li>
+<li><a class="active" href="d3-d4-drift-coverage.html"><span class="sidebar-tag">D3·D4</span>Drift &amp; coverage</a></li>
+<li><a class="" href="d6-rank-disagreement.html"><span class="sidebar-tag">D6</span>Reward and novelty are uncorrelated</a></li>
+<li><a class="" href="ac2-unlearning.html"><span class="sidebar-tag">AC2</span>Active un-learning pathology</a></li>
+</ul></aside>
+  <main>
+    <div class="exp-header">  <span class="exp-id">D3·D4</span>  <span style="color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">EXPERIMENT</span></div><h1>D3 + D4 — Drift &amp; coverage</h1>
+    
+<div class="subtitle">Two metrics that confirm H4 from independent angles: rep-encoded global drift, and how often new rollouts land in previously-seen regions.</div>
+
+<h2>D3 — RepExp global drift</h2>
+<p>Re-encode all buffered states with the <em>current</em> policy each step, compute centroid drift. Same shape as H4d — plateaus by step ~10.</p>
+<div class="figure-grid"><figure><img src="../figures/cross_task/d3_drift_from_step0.png" alt=""><figcaption>Centroid drift from step 0 (re-encoded with current model). Plateaus.</figcaption></figure>
+<figure><img src="../figures/cross_task/d3_drift_from_prev.png" alt=""><figcaption>Step-to-step drift. Falls 10×.</figcaption></figure></div>
+<figure><img src="../figures/cross_task/d3_drift_rel_spread.png" alt=""><figcaption>Drift normalized by within-step spread.</figcaption></figure>
+
+<h2>D4 — Coverage of past regions</h2>
+<p>How often do new rollouts land in or near the cloud of previously-seen rollouts?</p>
+<div class="figure-grid"><figure><img src="../figures/cross_task/d4_cov_frac_in_step0.png" alt=""><figcaption>Fraction of new rollouts within 1σ of step-0 cloud — rises over training.</figcaption></figure>
+<figure><img src="../figures/cross_task/d4_cov_frac_in_prev.png" alt=""><figcaption>Same vs previous step.</figcaption></figure></div>
+<div class="figure-grid"><figure><img src="../figures/cross_task/d4_nn_dist_ratio_step0.png" alt=""><figcaption>NN-distance to step-0 reps / within-step spread — shrinks.</figcaption></figure>
+<figure><img src="../figures/cross_task/d4_nn_dist_ratio_prev.png" alt=""><figcaption>Same vs previous step.</figcaption></figure></div>
+
+<h2>What it means</h2>
+<div class="callout">
+  <strong>Three independent metrics (H4d centroid drift, D3 RepExp drift, D4 NN-overlap) all agree.</strong> The policy spends increasing fractions of its rollouts re-visiting the early-training neighborhood. This isn't a measurement artifact of one metric; it's a real property of the policy trajectory.
+</div>
+
+    <div class="exp-nav"><a href="d1-d2-learning-signal.html"><div class="dir">← Previous</div><div class="ttl">D1 + D2 — Learning signal stays meaningful</div></a><a class="next" href="d6-rank-disagreement.html"><div class="dir">Next →</div><div class="ttl">D6 — Reward and novelty are uncorrelated</div></a></div>
+  </main>
+</div>
+
+<footer>
+  Repo: <a href="https://github.com/EdwardoSunny/rep-ttt">github.com/EdwardoSunny/rep-ttt</a> on <code>method-rep-novelty</code>.
+</footer>
+</body>
+</html>

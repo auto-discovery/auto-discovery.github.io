@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Methods — overview · Auto-Discovery</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="../index.html">Overview</a>
+  <a class="tab " href="../analysis/">Analysis</a>
+  <a class="tab active" href="../methods/">Methods</a>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar"><h4>Methods</h4><ul>
+<li><a class="active" href="index.html"><span class="sidebar-tag">5 experiments</span>Overview</a></li>
+<li><a class="" href="rep-novelty.html"><span class="sidebar-tag">Method 1</span>Rep-novelty PUCT bonus</a></li>
+<li><a class="" href="qd-archive.html"><span class="sidebar-tag">Method 2</span>CVT-MAP-Elites QD archive</a></li>
+<li><a class="" href="hybrid-puctc3.html"><span class="sidebar-tag">Hybrid 1</span>QD + high warmup PUCT_C</a></li>
+<li><a class="" href="hybrid-visit.html"><span class="sidebar-tag">Hybrid 2</span>QD + visit-count cell bonus</a></li>
+<li><a class="" href="leaderboards.html"><span class="sidebar-tag">Summary</span>Cross-task leaderboards</a></li>
+</ul></aside>
+  <main>
+    <h1>Methods — overview</h1>
+    
+<div class="subtitle">Two new selection methods plus two hybrids. Each was built from the analysis findings and tested head-to-head against PUCT-knob ablations on all three tasks.</div>
+
+<h2>What's here</h2>
+<ul class="findings">
+  <li><span class="h-label">M1</span><a href="rep-novelty.html">Rep-novelty PUCT bonus</a> — additive elliptical-leverage novelty term. <strong>Wins AC1.</strong></li>
+  <li><span class="h-label">M2</span><a href="qd-archive.html">CVT-MAP-Elites QD archive</a> — replaces lineage buffer with behavior-cell archive. <strong>Wins erdos by 10⁻⁶.</strong></li>
+  <li><span class="h-label">H1</span><a href="hybrid-puctc3.html">Hybrid 1 — QD + high warmup PUCT_C</a> — built, pending compute.</li>
+  <li><span class="h-label">H2</span><a href="hybrid-visit.html">Hybrid 2 — QD + visit-count cell bonus</a> — built, pending compute.</li>
+  <li><span class="h-label">★</span><a href="leaderboards.html">Cross-task leaderboards</a> — full 6-digit results on all 3 tasks.</li>
+</ul>
+
+<h2>How they relate to the diagnosis</h2>
+<table>
+  <thead><tr><th>Weakness</th><th>Addressed by</th></tr></thead>
+  <tbody>
+    <tr><td>W1 — single-lineage commitment</td><td>QD-archive (replaces lineage with cells); rep-novelty (pushes toward novel reps)</td></tr>
+    <tr><td>W2 — PUCT exploration self-disables</td><td>rep-novelty (scale-survives Q standardization)</td></tr>
+    <tr><td>W3 — local-only exploration</td><td>Both methods explicitly reward global-rep movement</td></tr>
+    <tr><td>W4 — AC2 active unlearning</td><td><strong>Neither</strong> (selection-side fixes don't address objective-side regression)</td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+  <strong>Important caveat.</strong> All methods above ran at 64 rollouts/step. The Phase A baseline at 512 rollouts/step already matches the prior method-best on erdos (0.380965) with no method enabled. The methods may have been beating a weak baseline, not introducing genuine signal. Phase A is the proper noise floor.
+</div>
+
+    <div class="exp-nav"><span></span><a class="next" href="rep-novelty.html"><div class="dir">Next →</div><div class="ttl">Rep-novelty PUCT bonus</div></a></div>
+  </main>
+</div>
+
+<footer>
+  Repo: <a href="https://github.com/EdwardoSunny/rep-ttt">github.com/EdwardoSunny/rep-ttt</a> on <code>method-rep-novelty</code>.
+</footer>
+</body>
+</html>

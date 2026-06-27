@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>H2 — PUCT knobs don't fix it · Auto-Discovery</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="../index.html">Overview</a>
+  <a class="tab active" href="../analysis/">Analysis</a>
+  <a class="tab " href="../methods/">Methods</a>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar"><h4>Analysis</h4><ul>
+<li><a class="" href="index.html"><span class="sidebar-tag">8 experiments</span>Overview</a></li>
+<li><a class="" href="h1-monomorphism.html"><span class="sidebar-tag">H1</span>Buffer monomorphism is universal</a></li>
+<li><a class="active" href="h2-knobs.html"><span class="sidebar-tag">H2</span>PUCT knobs don't fix it</a></li>
+<li><a class="" href="h3-q-dominates.html"><span class="sidebar-tag">H3</span>Q dominates the PUCT score</a></li>
+<li><a class="" href="h4-local-vs-global.html"><span class="sidebar-tag">H4</span>Local vs global exploration</a></li>
+<li><a class="" href="d1-d2-learning-signal.html"><span class="sidebar-tag">D1·D2</span>Learning signal stays meaningful</a></li>
+<li><a class="" href="d3-d4-drift-coverage.html"><span class="sidebar-tag">D3·D4</span>Drift &amp; coverage</a></li>
+<li><a class="" href="d6-rank-disagreement.html"><span class="sidebar-tag">D6</span>Reward and novelty are uncorrelated</a></li>
+<li><a class="" href="ac2-unlearning.html"><span class="sidebar-tag">AC2</span>Active un-learning pathology</a></li>
+</ul></aside>
+  <main>
+    <div class="exp-header">  <span class="exp-id">H2</span>  <span style="color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">EXPERIMENT</span></div><h1>H2 — PUCT knobs don't fix it</h1>
+    
+<div class="subtitle">PUCT exposes several knobs (<code>puct_c</code>, <code>topk_children</code>, <code>max_buffer_size</code>, <code>lineage_blocking</code>). Sweeping them doesn't move any of the H1 numbers — and barely moves reward either.</div>
+
+<h2>Variants tested</h2>
+<table>
+  <thead><tr><th>Variant</th><th>puct_c</th><th>topk</th><th>buf</th><th>Best reward</th></tr></thead>
+  <tbody>
+    <tr><td>baseline</td><td>1.0</td><td>2</td><td>1000</td><td class="num">0.381584</td></tr>
+    <tr><td>loose-prune</td><td>1.0</td><td>8</td><td>4000</td><td class="num"><strong>0.381044</strong></td></tr>
+    <tr><td>mcts-puct_c=0.3</td><td>0.3</td><td>2</td><td>1000</td><td class="num">0.381355</td></tr>
+    <tr><td>mcts-puct_c=3.0</td><td>3.0</td><td>2</td><td>1000</td><td class="num">0.380983</td></tr>
+  </tbody>
+</table>
+<p>Reward spread across all 4: <strong>0.0006</strong> (0.3810–0.3816). All four still monomorphic at 83-96% top-1 root.</p>
+
+<h2>Evidence</h2>
+<figure><img src="../figures/cross_task/best_reward_erdos.png" alt=""><figcaption>All 4 erdos variants converge to within 0.0006 of each other. Different paths, same plateau.</figcaption></figure>
+<figure><img src="../figures/cross_task/ancestry_top1_root_frac.png" alt=""><figcaption>Same monomorphism on all variants — knob-tuning doesn't disrupt the commitment.</figcaption></figure>
+
+<h2>What it means</h2>
+<div class="callout">
+  <strong>The commitment isn't a hyperparameter problem; it's structural.</strong> No setting of the existing knobs breaks the single-lineage convergence. To get different behavior you have to change the <em>mechanism</em>, not its parameters — which motivates the rep-novelty additive term (Method 1) and the QD-archive replacement (Method 2).
+</div>
+
+    <div class="exp-nav"><a href="h1-monomorphism.html"><div class="dir">← Previous</div><div class="ttl">H1 — Buffer monomorphism is universal</div></a><a class="next" href="h3-q-dominates.html"><div class="dir">Next →</div><div class="ttl">H3 — Q dominates the PUCT score</div></a></div>
+  </main>
+</div>
+
+<footer>
+  Repo: <a href="https://github.com/EdwardoSunny/rep-ttt">github.com/EdwardoSunny/rep-ttt</a> on <code>method-rep-novelty</code>.
+</footer>
+</body>
+</html>

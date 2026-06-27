@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cross-task leaderboards · Auto-Discovery</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="../index.html">Overview</a>
+  <a class="tab " href="../analysis/">Analysis</a>
+  <a class="tab active" href="../methods/">Methods</a>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar"><h4>Methods</h4><ul>
+<li><a class="" href="index.html"><span class="sidebar-tag">5 experiments</span>Overview</a></li>
+<li><a class="" href="rep-novelty.html"><span class="sidebar-tag">Method 1</span>Rep-novelty PUCT bonus</a></li>
+<li><a class="" href="qd-archive.html"><span class="sidebar-tag">Method 2</span>CVT-MAP-Elites QD archive</a></li>
+<li><a class="" href="hybrid-puctc3.html"><span class="sidebar-tag">Hybrid 1</span>QD + high warmup PUCT_C</a></li>
+<li><a class="" href="hybrid-visit.html"><span class="sidebar-tag">Hybrid 2</span>QD + visit-count cell bonus</a></li>
+<li><a class="active" href="leaderboards.html"><span class="sidebar-tag">Summary</span>Cross-task leaderboards</a></li>
+</ul></aside>
+  <main>
+    <div class="exp-header">  <span class="exp-id">Summary</span>  <span style="color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">OVERVIEW</span></div><h1>Cross-task leaderboards</h1>
+    
+<div class="subtitle">Full 6-digit results on all 3 tasks, across every variant tested.</div>
+
+<h2>ERDOS — minimize C₅ overlap (frontier 0.380876)</h2>
+<table>
+  <thead><tr><th>Variant</th><th>Epochs · rollouts/step</th><th class="mono">C₅ bound</th><th class="mono">Gap</th></tr></thead>
+  <tbody>
+    <tr class="winner"><td>phaseA baseline seed=0 (preliminary)</td><td>50 ep · 512</td><td class="num">0.380965</td><td class="num">+0.000089</td></tr>
+    <tr><td>qd-archive</td><td>50 ep · 64</td><td class="num">0.380966</td><td class="num">+0.000090</td></tr>
+    <tr><td>mcts-puct_c=3.0</td><td>30 ep · 64</td><td class="num">0.380983</td><td class="num">+0.000107</td></tr>
+    <tr><td>loose-prune</td><td>30 ep · 64</td><td class="num">0.381044</td><td class="num">+0.000168</td></tr>
+    <tr><td>rep-novelty</td><td>30 ep · 64</td><td class="num">0.381272</td><td class="num">+0.000396</td></tr>
+    <tr><td>mcts-puct_c=0.3</td><td>30 ep · 64</td><td class="num">0.381355</td><td class="num">+0.000479</td></tr>
+    <tr><td>baseline</td><td>30 ep · 64</td><td class="num">0.381584</td><td class="num">+0.000708</td></tr>
+  </tbody>
+</table>
+<figure><img src="../figures/cross_task/best_reward_erdos.png" alt=""><figcaption>Per-step best C₅ across all erdos variants. Lower is better.</figcaption></figure>
+
+<h2>AC1 — minimize sup‖autocorrelation‖ (frontier 1.503)</h2>
+<table>
+  <thead><tr><th>Variant</th><th>Epochs · rollouts/step</th><th class="mono">Best</th></tr></thead>
+  <tbody>
+    <tr class="winner"><td>rep-novelty</td><td>24/30 (timeout) · 64</td><td class="num">1.506845</td></tr>
+    <tr><td>ac1-loose-prune-50</td><td>50 · 64</td><td class="num">1.507113</td></tr>
+    <tr><td>ac1-baseline-50 (partial)</td><td>step 22/50 · 64</td><td class="num">1.507085</td></tr>
+    <tr><td>lineage-blocking-off</td><td>30 · 64</td><td class="num">1.507528</td></tr>
+    <tr><td>baseline-1</td><td>30 · 64</td><td class="num">1.508628</td></tr>
+    <tr><td>qd-archive</td><td>50 · 64</td><td class="num">1.510981</td></tr>
+    <tr><td>ac1-mcts-c=3.0-50</td><td>50 · 64</td><td class="num">1.515995</td></tr>
+  </tbody>
+</table>
+<figure><img src="../figures/cross_task/best_reward_ac1.png" alt=""><figcaption>Per-step best autocorr bound across all AC1 variants. Lower is better.</figcaption></figure>
+
+<h2>AC2 — maximize lower bound (frontier 0.97)</h2>
+<table>
+  <thead><tr><th>Variant</th><th>Epochs · rollouts/step</th><th class="mono">Best</th></tr></thead>
+  <tbody>
+    <tr class="winner"><td>baseline-1</td><td>30 · 64</td><td class="num">0.935814</td></tr>
+    <tr><td>qd-archive</td><td>50 · 64</td><td class="num">0.930612</td></tr>
+  </tbody>
+</table>
+<figure><img src="../figures/cross_task/best_reward_ac2.png" alt=""><figcaption>AC2 — neither method helped. Baseline still saturated 0.034 below frontier.</figcaption></figure>
+
+<h2>Headline take</h2>
+<div class="callout">
+  <strong>No method broke the published 0.380876 frontier on erdos.</strong> Closest was qd-archive at 0.380966 (+0.000090). The Phase A baseline at full batch is at 0.380965 — essentially the same, with no method enabled.
+</div>
+<div class="callout warn">
+  <strong>The interpretation hinges on the noise floor.</strong> Until Phase A's 5 erdos seeds finish and we have a std on the seed-to-seed variance, "qd beat mcts by 0.000017" or "phaseA baseline beat qd by 0.000001" are both inside the plausible noise.
+</div>
+
+    <div class="exp-nav"><a href="hybrid-visit.html"><div class="dir">← Previous</div><div class="ttl">Hybrid 2 — QD + visit-count cell bonus</div></a></div>
+  </main>
+</div>
+
+<footer>
+  Repo: <a href="https://github.com/EdwardoSunny/rep-ttt">github.com/EdwardoSunny/rep-ttt</a> on <code>method-rep-novelty</code>.
+</footer>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>D6 — Reward and novelty are uncorrelated · Auto-Discovery</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="../index.html">Overview</a>
+  <a class="tab active" href="../analysis/">Analysis</a>
+  <a class="tab " href="../methods/">Methods</a>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar"><h4>Analysis</h4><ul>
+<li><a class="" href="index.html"><span class="sidebar-tag">8 experiments</span>Overview</a></li>
+<li><a class="" href="h1-monomorphism.html"><span class="sidebar-tag">H1</span>Buffer monomorphism is universal</a></li>
+<li><a class="" href="h2-knobs.html"><span class="sidebar-tag">H2</span>PUCT knobs don't fix it</a></li>
+<li><a class="" href="h3-q-dominates.html"><span class="sidebar-tag">H3</span>Q dominates the PUCT score</a></li>
+<li><a class="" href="h4-local-vs-global.html"><span class="sidebar-tag">H4</span>Local vs global exploration</a></li>
+<li><a class="" href="d1-d2-learning-signal.html"><span class="sidebar-tag">D1·D2</span>Learning signal stays meaningful</a></li>
+<li><a class="" href="d3-d4-drift-coverage.html"><span class="sidebar-tag">D3·D4</span>Drift &amp; coverage</a></li>
+<li><a class="active" href="d6-rank-disagreement.html"><span class="sidebar-tag">D6</span>Reward and novelty are uncorrelated</a></li>
+<li><a class="" href="ac2-unlearning.html"><span class="sidebar-tag">AC2</span>Active un-learning pathology</a></li>
+</ul></aside>
+  <main>
+    <div class="exp-header">  <span class="exp-id">D6</span>  <span style="color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">EXPERIMENT</span></div><h1>D6 — Reward and novelty are uncorrelated</h1>
+    
+<div class="subtitle">Within each 16-rollout group, rank the rollouts two ways: by reward, and by representational novelty. Compute Kendall τ between the two rankings. The answer: ~0 throughout training.</div>
+
+<h2>Three novelty measures</h2>
+<p>We tried three definitions of "novelty" to make sure the finding isn't metric-specific:</p>
+<ul>
+  <li><strong>Elliptic bonus</strong>: LinUCB / OFUL confidence width <code>√(hᵀ A⁻¹ h)</code> against an online covariance.</li>
+  <li><strong>Mean-cosine-distance</strong>: mean cosine distance to other group members.</li>
+  <li><strong>kNN-distance</strong>: distance to nearest neighbor among other group members.</li>
+</ul>
+
+<h2>Evidence</h2>
+<div class="figure-grid"><figure><img src="../figures/cross_task/rank_disagreement_elliptic.png" alt=""><figcaption>Kendall τ between reward and elliptic-bonus novelty, averaged across groups per step.</figcaption></figure>
+<figure><img src="../figures/cross_task/rank_disagreement_meancos.png" alt=""><figcaption>Same for mean-cosine-distance novelty.</figcaption></figure></div>
+<figure><img src="../figures/cross_task/rank_disagreement_knn.png" alt=""><figcaption>Same for kNN-distance novelty. All three measures give τ ≈ 0 throughout training.</figcaption></figure>
+
+<h2>What it means</h2>
+<div class="callout good">
+  <strong>This is the structural justification for adding a novelty bonus.</strong> If reward and novelty were correlated (τ near ±1), a novelty bonus would just be a relabeled reward bonus. Since τ ≈ 0, novelty carries <em>independent</em> information about which states to explore. The bonus we add isn't a different way to chase reward; it's a different signal entirely.
+</div>
+
+    <div class="exp-nav"><a href="d3-d4-drift-coverage.html"><div class="dir">← Previous</div><div class="ttl">D3 + D4 — Drift &amp; coverage</div></a><a class="next" href="ac2-unlearning.html"><div class="dir">Next →</div><div class="ttl">AC2 — Active un-learning pathology</div></a></div>
+  </main>
+</div>
+
+<footer>
+  Repo: <a href="https://github.com/EdwardoSunny/rep-ttt">github.com/EdwardoSunny/rep-ttt</a> on <code>method-rep-novelty</code>.
+</footer>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>H1 — Buffer monomorphism is universal · Auto-Discovery</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="../index.html">Overview</a>
+  <a class="tab active" href="../analysis/">Analysis</a>
+  <a class="tab " href="../methods/">Methods</a>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar"><h4>Analysis</h4><ul>
+<li><a class="" href="index.html"><span class="sidebar-tag">8 experiments</span>Overview</a></li>
+<li><a class="active" href="h1-monomorphism.html"><span class="sidebar-tag">H1</span>Buffer monomorphism is universal</a></li>
+<li><a class="" href="h2-knobs.html"><span class="sidebar-tag">H2</span>PUCT knobs don't fix it</a></li>
+<li><a class="" href="h3-q-dominates.html"><span class="sidebar-tag">H3</span>Q dominates the PUCT score</a></li>
+<li><a class="" href="h4-local-vs-global.html"><span class="sidebar-tag">H4</span>Local vs global exploration</a></li>
+<li><a class="" href="d1-d2-learning-signal.html"><span class="sidebar-tag">D1·D2</span>Learning signal stays meaningful</a></li>
+<li><a class="" href="d3-d4-drift-coverage.html"><span class="sidebar-tag">D3·D4</span>Drift &amp; coverage</a></li>
+<li><a class="" href="d6-rank-disagreement.html"><span class="sidebar-tag">D6</span>Reward and novelty are uncorrelated</a></li>
+<li><a class="" href="ac2-unlearning.html"><span class="sidebar-tag">AC2</span>Active un-learning pathology</a></li>
+</ul></aside>
+  <main>
+    <div class="exp-header">  <span class="exp-id">H1</span>  <span style="color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">EXPERIMENT</span></div><h1>H1 — Buffer monomorphism is universal</h1>
+    
+<div class="subtitle">Every TTT-Discover baseline collapses to one dominant root lineage within ~10-20 steps, regardless of task or knob setting. The other seeds survive in the buffer but stop being expanded.</div>
+
+<h2>Key numbers</h2>
+<table>
+  <thead><tr><th>Run</th><th>Top-1 root coverage</th><th>Distinct roots</th><th>Monomorphic (80/10)</th></tr></thead>
+  <tbody>
+    <tr><td>erdos-baseline</td><td class="num">84.8%</td><td class="num">4</td><td>YES</td></tr>
+    <tr><td>erdos-loose-prune</td><td class="num">83.7%</td><td class="num">4</td><td>YES</td></tr>
+    <tr><td>erdos-mcts c=0.3</td><td class="num"><strong>95.8%</strong></td><td class="num">4</td><td>YES</td></tr>
+    <tr><td>erdos-mcts c=3.0</td><td class="num">94.3%</td><td class="num">4</td><td>YES</td></tr>
+    <tr><td>ac1-baseline</td><td class="num">92.6%</td><td class="num">4</td><td>YES</td></tr>
+    <tr><td>ac1-noblock</td><td class="num">92.9%</td><td class="num">4</td><td>YES</td></tr>
+    <tr><td>ac2-baseline</td><td class="num">89.1%</td><td class="num">4</td><td>YES</td></tr>
+  </tbody>
+</table>
+
+<h2>Evidence</h2>
+<figure><img src="../figures/cross_task/ancestry_top1_root_frac.png" alt=""><figcaption>Top-1 root coverage over training (color = task, linestyle = variant). All runs saturate at 0.85+.</figcaption></figure>
+<div class="figure-grid"><figure><img src="../figures/cross_task/ancestry_n_distinct_roots.png" alt=""><figcaption>Number of distinct roots holds at 4 (= num seeds). Roots aren't lost, they're out-grown.</figcaption></figure>
+<figure><img src="../figures/cross_task/ancestry_depth_mean.png" alt=""><figcaption>Mean depth of buffer states grows — confirms drilling deeper into one lineage rather than broader.</figcaption></figure></div>
+
+<h2>What it means</h2>
+<div class="callout">
+  <strong>TTT-Discover always picks one seed and exploits it.</strong> The "search" is effectively a single-lineage search after the first 10-20 epochs. Whatever broad exploration the original 4 seeds were supposed to provide is structurally undone by selection pressure.
+</div>
+
+    <div class="exp-nav"><a href="index.html"><div class="dir">← Previous</div><div class="ttl">Analysis overview</div></a><a class="next" href="h2-knobs.html"><div class="dir">Next →</div><div class="ttl">H2 — PUCT knobs don't fix it</div></a></div>
+  </main>
+</div>
+
+<footer>
+  Repo: <a href="https://github.com/EdwardoSunny/rep-ttt">github.com/EdwardoSunny/rep-ttt</a> on <code>method-rep-novelty</code>.
+</footer>
+</body>
+</html>

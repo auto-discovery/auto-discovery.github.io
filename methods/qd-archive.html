@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CVT-MAP-Elites QD archive · Auto-Discovery</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="../index.html">Overview</a>
+  <a class="tab " href="../analysis/">Analysis</a>
+  <a class="tab active" href="../methods/">Methods</a>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar"><h4>Methods</h4><ul>
+<li><a class="" href="index.html"><span class="sidebar-tag">5 experiments</span>Overview</a></li>
+<li><a class="" href="rep-novelty.html"><span class="sidebar-tag">Method 1</span>Rep-novelty PUCT bonus</a></li>
+<li><a class="active" href="qd-archive.html"><span class="sidebar-tag">Method 2</span>CVT-MAP-Elites QD archive</a></li>
+<li><a class="" href="hybrid-puctc3.html"><span class="sidebar-tag">Hybrid 1</span>QD + high warmup PUCT_C</a></li>
+<li><a class="" href="hybrid-visit.html"><span class="sidebar-tag">Hybrid 2</span>QD + visit-count cell bonus</a></li>
+<li><a class="" href="leaderboards.html"><span class="sidebar-tag">Summary</span>Cross-task leaderboards</a></li>
+</ul></aside>
+  <main>
+    <div class="exp-header">  <span class="exp-id">Method 2</span>  <span style="color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">EXPERIMENT</span></div><h1>CVT-MAP-Elites QD archive</h1>
+    
+<div class="subtitle">Throw out the lineage-based PUCT buffer entirely. Replace it with a CVT-MAP-Elites archive that partitions rep space into behavior cells and picks parents by softmax over cell quality + cell novelty.</div>
+
+<h2>Mechanism</h2>
+<div class="card">
+<ol>
+  <li><strong>Warmup</strong>: run PUCT for ~5-7 batches until 80 valid (<code>correctness&gt;0</code>) rollouts have frozen-rep descriptors.</li>
+  <li><strong>Fit CVT once</strong>: k-means on the 80 descriptors → 64 centroids. <em>Centroids frozen.</em></li>
+  <li><strong>Each cell keeps one elite</strong>: the highest-reward state whose descriptor falls in that cell.</li>
+  <li><strong>Selection</strong>: pick a cell via softmax of <code>z(quality)/tau + c_rep · z(cell_novelty)</code>. Cell-novelty reuses the same LinUCB tracker but observes cell centroids of picked parents.</li>
+  <li>The cell's elite becomes the next parent for rollouts.</li>
+</ol>
+<p>Config used: <code>n_cells=64, tau=0.5, c_rep=1.0</code>. Code: <code>ttt_discover/methods/qd_archive.py</code>.</p>
+</div>
+
+<h2>Why it addresses the diagnosis</h2>
+<ul>
+  <li><strong>W1 (commitment)</strong>: by construction — selection is per-cell, not per-lineage. The system can't depth-front one root.</li>
+  <li><strong>W3 (local-only)</strong>: cell-novelty rewards picks in cells the tracker hasn't observed recently → explicit cross-region pressure.</li>
+  <li><strong>H3 (Q dominates)</strong>: <code>tau</code> and <code>c_rep</code> let us tune the trade-off explicitly; no structural decay.</li>
+</ul>
+
+<h2>Results (50 epochs)</h2>
+<table>
+  <thead><tr><th>Task</th><th>Best</th><th>vs every prior variant</th></tr></thead>
+  <tbody>
+    <tr class="winner"><td><span class="tag accent">erdos</span></td><td class="num">0.380966</td><td><strong>Beat prior leader</strong> mcts-c=3.0 (0.380983) by 0.000017; gap +0.000090 to 0.380876 frontier</td></tr>
+    <tr><td><span class="tag accent">AC1</span></td><td class="num">1.510981</td><td>Worse than baseline (1.5086) and rep-novelty (1.5068)</td></tr>
+    <tr><td><span class="tag accent">AC2</span></td><td class="num">0.930612</td><td>Worse than baseline (0.9358)</td></tr>
+  </tbody>
+</table>
+
+<h2>Evidence</h2>
+<figure><img src="../figures/cross_task/best_reward_erdos.png" alt=""><figcaption>QD-archive (diamond marker, blue) sits at the top of the erdos leaderboard by 1×10⁻⁶ over mcts-c=3.0.</figcaption></figure>
+<figure><img src="../figures/cross_task/best_reward_ac1.png" alt=""><figcaption>QD-archive (diamond marker, green) lands BELOW the baseline on AC1. The cell-based selection didn't generalize.</figcaption></figure>
+<figure><img src="../figures/cross_task/best_reward_ac2.png" alt=""><figcaption>QD-archive (diamond marker, orange) underperforms baseline on AC2 too.</figcaption></figure>
+
+<h2>Interpretation</h2>
+<div class="callout">
+  <strong>QD wins erdos because erdos is the closest to its frontier already</strong> — and QD's behavior-cell coverage forces the search to <em>find</em> a slightly-different lineage rather than refine the same one. On erdos that lands on a marginally better solution. AC1's win comes from rep-novelty's smarter signal in a higher-headroom regime; QD's per-cell elite doesn't add anything beyond that. AC2 has the unlearning pathology — neither method helps.
+</div>
+
+    <div class="exp-nav"><a href="rep-novelty.html"><div class="dir">← Previous</div><div class="ttl">Rep-novelty PUCT bonus</div></a><a class="next" href="hybrid-puctc3.html"><div class="dir">Next →</div><div class="ttl">Hybrid 1 — QD + high warmup PUCT_C</div></a></div>
+  </main>
+</div>
+
+<footer>
+  Repo: <a href="https://github.com/EdwardoSunny/rep-ttt">github.com/EdwardoSunny/rep-ttt</a> on <code>method-rep-novelty</code>.
+</footer>
+</body>
+</html>

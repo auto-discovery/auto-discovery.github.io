@@ -7,14 +7,14 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<nav>
+<nav class="top">
   <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
   <a class="tab active" href="index.html">Overview</a>
-  <a class="tab" href="analysis.html">Analysis</a>
-  <a class="tab" href="methods.html">Methods</a>
+  <a class="tab" href="analysis/">Analysis</a>
+  <a class="tab" href="methods/">Methods</a>
 </nav>
 
-<main>
+<main class="full">
   <section class="hero">
     <h1>Auto-Discovery dashboard</h1>
     <div class="tagline">
@@ -23,78 +23,57 @@
   </section>
 
   <div class="grid-3">
-    <div class="stat">
-      <div class="label">Tasks studied</div>
-      <div class="value">3</div>
-      <div class="delta dim">erdos · AC1 · AC2</div>
-    </div>
-    <div class="stat">
-      <div class="label">Methods built</div>
-      <div class="value">2 + 2</div>
-      <div class="delta dim">rep-novelty · CVT-MAP-Elites + 2 hybrids</div>
-    </div>
-    <div class="stat">
-      <div class="label">Production runs</div>
-      <div class="value">20+</div>
-      <div class="delta dim">7 baseline · 3 rep-novelty · 5 QD · 5+ Phase-A</div>
-    </div>
-    <div class="stat">
-      <div class="label">Cross-task figures</div>
-      <div class="value">34</div>
-      <div class="delta dim">H1-H4 + D1-D7 + best-reward</div>
-    </div>
-    <div class="stat">
-      <div class="label">Best erdos C₅</div>
-      <div class="value">0.380965</div>
-      <div class="delta good">+0.000089 to 0.380876 frontier</div>
-    </div>
-    <div class="stat">
-      <div class="label">Best AC1 (lower=better)</div>
-      <div class="value">1.5068</div>
-      <div class="delta good">rep-novelty, beats baseline by 0.0018</div>
-    </div>
+    <div class="stat"><div class="label">Tasks</div><div class="value">3</div><div class="delta dim">erdos · AC1 · AC2</div></div>
+    <div class="stat"><div class="label">Diagnostic experiments</div><div class="value">8</div><div class="delta dim">H1-H4 + D1, D2, D6, AC2</div></div>
+    <div class="stat"><div class="label">Method experiments</div><div class="value">4</div><div class="delta dim">2 methods + 2 hybrids</div></div>
+    <div class="stat"><div class="label">Best erdos C₅</div><div class="value">0.380965</div><div class="delta good">+0.000089 to 0.380876 frontier</div></div>
+    <div class="stat"><div class="label">Best AC1</div><div class="value">1.5068</div><div class="delta good">rep-novelty, vs baseline 1.5086</div></div>
+    <div class="stat"><div class="label">Best AC2</div><div class="value">0.9358</div><div class="delta dim">baseline; no method beat it</div></div>
   </div>
 
   <div class="grid-2">
     <div class="card glow">
       <h3>Analysis findings</h3>
-      <p>The diagnostic study of TTT-Discover. Four headline weaknesses (H1-H4) backed by seven detailed mechanisms (D1-D7), plus the "actively un-learning" pathology on AC2.</p>
-      <p><strong>What you'll find:</strong> why TTT-Discover commits to a single search lineage, why its built-in exploration term self-disables, and the local-vs-global exploration split that motivates every method we built.</p>
-      <a class="cta" href="analysis.html">Read the analysis →</a>
+      <p>Each diagnostic finding is its own experiment page with the relevant cross-task figures and numbers.</p>
+      <ul>
+        <li><a href="analysis/h1-monomorphism.html">H1 — Buffer monomorphism is universal</a></li>
+        <li><a href="analysis/h2-knobs.html">H2 — PUCT knobs don't fix it</a></li>
+        <li><a href="analysis/h3-q-dominates.html">H3 — Q dominates the PUCT score</a></li>
+        <li><a href="analysis/h4-local-vs-global.html">H4 — Local vs global exploration</a></li>
+        <li><a href="analysis/d1-d2-learning-signal.html">D1+D2 — Learning signal stays meaningful</a></li>
+        <li><a href="analysis/d3-d4-drift-coverage.html">D3+D4 — Drift &amp; coverage</a></li>
+        <li><a href="analysis/d6-rank-disagreement.html">D6 — Reward ⊥ novelty</a></li>
+        <li><a href="analysis/ac2-unlearning.html">AC2 — Active un-learning pathology</a></li>
+      </ul>
+      <a class="cta" href="analysis/">All analysis →</a>
     </div>
 
     <div class="card glow">
       <h3>Methods experiments</h3>
-      <p>Two new selection methods built from the analysis, run head-to-head against PUCT-knob ablations on all three tasks.</p>
-      <p><strong>Rep-novelty PUCT bonus</strong> — additive elliptical-leverage novelty term in selection. <strong>CVT-MAP-Elites QD archive</strong> — replaces the lineage buffer with a behavior-cell archive. Plus two hybrids and a planned full-batch reproduction.</p>
-      <a class="cta" href="methods.html">Read the methods report →</a>
+      <p>Each method built &amp; tested as a separate experiment.</p>
+      <ul>
+        <li><a href="methods/rep-novelty.html">Rep-novelty PUCT bonus</a> <span class="tag good">wins AC1</span></li>
+        <li><a href="methods/qd-archive.html">CVT-MAP-Elites QD archive</a> <span class="tag good">wins erdos</span></li>
+        <li><a href="methods/hybrid-puctc3.html">Hybrid 1 — high warmup PUCT_C</a> <span class="tag warn">pending</span></li>
+        <li><a href="methods/hybrid-visit.html">Hybrid 2 — visit-count cell bonus</a> <span class="tag warn">pending</span></li>
+        <li><a href="methods/leaderboards.html">Final leaderboards (all 3 tasks)</a></li>
+      </ul>
+      <a class="cta" href="methods/">All methods →</a>
     </div>
   </div>
 
-  <h2>Quick story</h2>
-
+  <h2>One-line summary</h2>
   <div class="callout">
-    <strong>The shape of the problem.</strong> Every TTT-Discover baseline commits to one root lineage by step ~10-20 and exploits it for the rest of training. The PUCT exploration term decays to zero faster than Q grows. The policy keeps producing diverse rollouts per step, but always around the same point in representation space.
+    <strong>The diagnosis.</strong> TTT-Discover commits to one root lineage early (H1), its exploration term self-disables (H3), and policies do local exploration around a frozen center (H4). Methods built from this diagnosis: rep-novelty wins AC1, QD-archive wins erdos by 10⁻⁶.
   </div>
-
-  <div class="callout">
-    <strong>What the methods did.</strong> Rep-novelty injects an independent exploration signal into selection — wins AC1 cleanly. QD-archive replaces the lineage buffer with a behavior-cell archive — wins erdos, narrowly. Neither helps AC2 (the "active unlearning" task).
-  </div>
-
   <div class="callout warn">
-    <strong>The caveat we discovered later.</strong> The whole diagnostic was at 64 rollouts/step. At paper-spec 512 rollouts/step (Phase A, currently running), the bare baseline reaches 0.380965 on erdos — better than every method we tested at 64 rollouts. The "method wins" may have been measuring a weaker baseline, not a stronger method. The H1-H4 mechanisms are still real per-step phenomena; their *practical cost* may shrink at proper batch.
+    <strong>The caveat.</strong> The diagnostic ran at 64 rollouts/step; at paper-spec 512 rollouts (Phase A, in flight), the bare baseline reaches 0.380965 on erdos — better than every method we tested at 64 rollouts. H1-H4 mechanisms are real per-step; their practical cost may shrink at proper batch.
   </div>
-
-  <h2>Layout of this site</h2>
-  <ul>
-    <li><a href="analysis.html"><strong>Analysis</strong></a> — diagnostic study writeup (H1-H4, D1-D7), per-task tables, 34 cross-task overlay plots.</li>
-    <li><a href="methods.html"><strong>Methods</strong></a> — both new selection methods, mechanisms, results vs baselines and ablations, final leaderboards.</li>
-  </ul>
 </main>
 
 <footer>
   Built from <code>scripts/analysis/FINDINGS.md</code>, <code>METHODS_FINDINGS.md</code>, <code>CROSS_TASK_PLOTS.md</code> + 34 cross-task overlay figures.
-  · Repo: <code>github.com/EdwardoSunny/rep-ttt</code> on <code>method-rep-novelty</code>.
+  · Repo: <a href="https://github.com/EdwardoSunny/rep-ttt">github.com/EdwardoSunny/rep-ttt</a> on <code>method-rep-novelty</code>.
 </footer>
 </body>
 </html>

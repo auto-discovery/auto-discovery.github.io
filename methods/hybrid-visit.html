@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hybrid 2 — QD + visit-count cell bonus · Auto-Discovery</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="../index.html">Overview</a>
+  <a class="tab " href="../analysis/">Analysis</a>
+  <a class="tab active" href="../methods/">Methods</a>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar"><h4>Methods</h4><ul>
+<li><a class="" href="index.html"><span class="sidebar-tag">5 experiments</span>Overview</a></li>
+<li><a class="" href="rep-novelty.html"><span class="sidebar-tag">Method 1</span>Rep-novelty PUCT bonus</a></li>
+<li><a class="" href="qd-archive.html"><span class="sidebar-tag">Method 2</span>CVT-MAP-Elites QD archive</a></li>
+<li><a class="" href="hybrid-puctc3.html"><span class="sidebar-tag">Hybrid 1</span>QD + high warmup PUCT_C</a></li>
+<li><a class="active" href="hybrid-visit.html"><span class="sidebar-tag">Hybrid 2</span>QD + visit-count cell bonus</a></li>
+<li><a class="" href="leaderboards.html"><span class="sidebar-tag">Summary</span>Cross-task leaderboards</a></li>
+</ul></aside>
+  <main>
+    <div class="exp-header">  <span class="exp-id">Hybrid 2</span>  <span style="color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">EXPERIMENT</span></div><h1>Hybrid 2 — QD + visit-count cell bonus</h1>
+    
+<div class="subtitle">QD-archive's cell selection currently uses <code>z(quality)/tau + c_rep · z(cell_novelty)</code>. Add a PUCT-style visit-count term so cells with fewer expansions get a boost — combines QD's behavior-cell exploitation with MCTS's visit-count exploration.</div>
+
+<h2>Mechanism</h2>
+<div class="card">
+<pre>logit(c) = z(quality(c)) / tau
+         + c_rep   · z(cell_novelty(c))
+         + c_visit · z( √(1+T) / (1+n_select[c]) )    # ← new term</pre>
+<p>The archive already tracks <code>n_select[cell]</code> (number of times each cell has been chosen as a parent). The visit term boosts under-visited cells: <strong>3×</strong> for never-visited cells vs once-visited cells (verified by smoke test).</p>
+<p>Code: <code>qd_archive.py::_visit_term</code>. Threaded through sampler/config/run_baseline via <code>QD_C_VISIT</code> env var. Default 0.0 preserves prior QD behavior.</p>
+</div>
+
+<h2>Implementation diff</h2>
+<div class="card">
+<pre>def _visit_term(self, cells: list[int]) -> np.ndarray:
+    """PUCT-style visit bonus over cells:
+       sqrt(1 + sum_visits) / (1 + n_select[cell])"""
+    total = sum(self.n_select.values())
+    sqrtT = np.sqrt(1.0 + total)
+    n_arr = np.array([self.n_select.get(c, 0) for c in cells], dtype=np.float64)
+    return sqrtT / (1.0 + n_arr)
+
+# inside sample_parent():
+logits = _robust_z(q) / tau + self.c_rep * _robust_z(nov)
+if self.c_visit != 0.0:
+    logits += self.c_visit * _robust_z(self._visit_term(cells))</pre>
+</div>
+
+<h2>Status</h2>
+<div class="callout warn">
+  <strong>Pending compute.</strong> Submitted as job <code>1654430</code>. Cluster failed each launch attempt. No data yet.
+</div>
+
+<h2>What we'd measure</h2>
+<ul>
+  <li>How does cell-visit distribution differ between QD baseline (visit term off) and visit-hybrid?</li>
+  <li>Does pushing into under-visited cells find new modes? Best C₅ on erdos, autocorr on AC1/AC2.</li>
+  <li>Sweep <code>c_visit ∈ {0.5, 1.0, 2.0}</code> to find the balance against quality and rep-novelty.</li>
+</ul>
+
+    <div class="exp-nav"><a href="hybrid-puctc3.html"><div class="dir">← Previous</div><div class="ttl">Hybrid 1 — QD + high warmup PUCT_C</div></a><a class="next" href="leaderboards.html"><div class="dir">Next →</div><div class="ttl">Cross-task leaderboards</div></a></div>
+  </main>
+</div>
+
+<footer>
+  Repo: <a href="https://github.com/EdwardoSunny/rep-ttt">github.com/EdwardoSunny/rep-ttt</a> on <code>method-rep-novelty</code>.
+</footer>
+</body>
+</html>
