@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>E1 — Parent-sensitivity probe · Auto-Discovery</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="../index.html">Overview</a>
+  <a class="tab " href="../analysis/">Analysis</a>
+  <a class="tab active" href="../methods/">Methods</a>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar"><h4>Methods</h4><ul>
+<li><a class="" href="index.html"><span class="sidebar-tag">11 experiments</span>Overview</a></li>
+<li><a class="" href="rep-novelty.html"><span class="sidebar-tag">Method 1</span>Rep-novelty PUCT bonus</a></li>
+<li><a class="" href="qd-archive.html"><span class="sidebar-tag">Method 2</span>CVT-MAP-Elites QD archive</a></li>
+<li><a class="" href="hybrid-puctc3.html"><span class="sidebar-tag">Hybrid 1</span>QD + high warmup PUCT_C</a></li>
+<li><a class="" href="hybrid-visit.html"><span class="sidebar-tag">Hybrid 2</span>QD + visit-count cell bonus</a></li>
+<li><a class="" href="dual-diversity.html"><span class="sidebar-tag">Method 3</span>overview</a></li>
+<li><a class="" href="e0-batch-gate.html"><span class="sidebar-tag">E0</span>Batch-confound gate</a></li>
+<li><a class="active" href="e1-parent-sensitivity.html"><span class="sidebar-tag">E1</span>Parent-sensitivity probe</a></li>
+<li><a class="" href="e2-descriptor-validity.html"><span class="sidebar-tag">E2</span>Descriptor validity</a></li>
+<li><a class="" href="e3-2x2.html"><span class="sidebar-tag">E3</span>Selection × update 2×2</a></li>
+<li><a class="" href="e4-shared-vs-sep.html"><span class="sidebar-tag">E4</span>Shared vs separate A</a></li>
+<li><a class="" href="e5-alpha-sweep.html"><span class="sidebar-tag">E5</span>α-schedule stress test</a></li>
+<li><a class="" href="leaderboards.html"><span class="sidebar-tag">Summary</span>Cross-task leaderboards</a></li>
+</ul></aside>
+  <main>
+    <div class="exp-header">  <span class="exp-id">E1</span>  <span style="color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">EXPERIMENT</span></div><h1>E1 — Parent-sensitivity probe</h1>
+    
+<div class="subtitle">No-training probe. Are rollouts actually sensitive to which parent they're started from, or do they collapse to similar outputs regardless of parent? If parent insensitive, the update-side novelty signal is load-bearing; if sensitive, selection-side already does the work and dual diversity may be overkill.</div>
+
+<h2>Method</h2>
+<div class="card">
+<p>For each training step, group rollouts by <code>parent_id</code> and compute the variance decomposition of frozen-rep descriptors:</p>
+<pre>σ²_within  = within-parent variance of descriptors
+σ²_across  = between-parent variance of descriptors
+ratio      = σ²_across / σ²_within</pre>
+<ul>
+  <li><strong>ratio ≫ 1</strong> → parent strongly predicts rollout content (SENSITIVE)</li>
+  <li><strong>ratio ≈ 1</strong> → parent doesn't matter much (INSENSITIVE — update-side needed)</li>
+  <li><strong>ratio &lt; 1</strong> → noise dominates parent (INSENSITIVE, more so)</li>
+</ul>
+<p>Script: <code>scripts/analysis/e1_parent_sensitivity.py</code>. Runs on any completed rollouts.jsonl with embedded <code>parent_id</code> + <code>frozen_rep</code>. Output: per-step ratio + an aggregate verdict.</p>
+</div>
+
+<h2>Usage</h2>
+<pre>python scripts/analysis/e1_parent_sensitivity.py \
+    /workspace-vast/$USER/exp/ttt-discover/runs/tinker_log/ac1-phaseA-baseline-seed0 \
+    --out e1_phaseA_seed0.json</pre>
+
+<h2>Verdict thresholds (preregistered)</h2>
+<table>
+  <thead><tr><th>median ratio</th><th>verdict</th><th>implication</th></tr></thead>
+  <tbody>
+    <tr><td class="num">&gt; 2.0</td><td>SENSITIVE</td><td>Selection-side novelty is the leverage; dual diversity is overkill</td></tr>
+    <tr><td class="num">0.5–2.0</td><td>AMBIGUOUS</td><td>Worth running E3 to test; both consumers may each contribute</td></tr>
+    <tr><td class="num">&lt; 0.5</td><td>INSENSITIVE</td><td>Update-side advantage adjustment is load-bearing; dual diversity justified</td></tr>
+  </tbody>
+</table>
+
+<h2>Status</h2>
+<div class="callout">
+  <strong>No GPU jobs.</strong> Code ready; runs on any completed run dir. Will be executed against Phase A AC1 baselines once those produce enough <code>rollouts.jsonl</code> with descriptors attached.
+</div>
+
+    <div class="exp-nav"><a href="e0-batch-gate.html"><div class="dir">← Previous</div><div class="ttl">E0 — Batch-confound gate</div></a><a class="next" href="e2-descriptor-validity.html"><div class="dir">Next →</div><div class="ttl">E2 — Descriptor validity</div></a></div>
+  </main>
+</div>
+
+<footer>
+  Repo: <a href="https://github.com/EdwardoSunny/rep-ttt">github.com/EdwardoSunny/rep-ttt</a> on <code>method-rep-novelty</code>.
+</footer>
+</body>
+</html>

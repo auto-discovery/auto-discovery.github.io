@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>E5 — α-schedule stress test · Auto-Discovery</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="../index.html">Overview</a>
+  <a class="tab " href="../analysis/">Analysis</a>
+  <a class="tab active" href="../methods/">Methods</a>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar"><h4>Methods</h4><ul>
+<li><a class="" href="index.html"><span class="sidebar-tag">11 experiments</span>Overview</a></li>
+<li><a class="" href="rep-novelty.html"><span class="sidebar-tag">Method 1</span>Rep-novelty PUCT bonus</a></li>
+<li><a class="" href="qd-archive.html"><span class="sidebar-tag">Method 2</span>CVT-MAP-Elites QD archive</a></li>
+<li><a class="" href="hybrid-puctc3.html"><span class="sidebar-tag">Hybrid 1</span>QD + high warmup PUCT_C</a></li>
+<li><a class="" href="hybrid-visit.html"><span class="sidebar-tag">Hybrid 2</span>QD + visit-count cell bonus</a></li>
+<li><a class="" href="dual-diversity.html"><span class="sidebar-tag">Method 3</span>overview</a></li>
+<li><a class="" href="e0-batch-gate.html"><span class="sidebar-tag">E0</span>Batch-confound gate</a></li>
+<li><a class="" href="e1-parent-sensitivity.html"><span class="sidebar-tag">E1</span>Parent-sensitivity probe</a></li>
+<li><a class="" href="e2-descriptor-validity.html"><span class="sidebar-tag">E2</span>Descriptor validity</a></li>
+<li><a class="" href="e3-2x2.html"><span class="sidebar-tag">E3</span>Selection × update 2×2</a></li>
+<li><a class="" href="e4-shared-vs-sep.html"><span class="sidebar-tag">E4</span>Shared vs separate A</a></li>
+<li><a class="active" href="e5-alpha-sweep.html"><span class="sidebar-tag">E5</span>α-schedule stress test</a></li>
+<li><a class="" href="leaderboards.html"><span class="sidebar-tag">Summary</span>Cross-task leaderboards</a></li>
+</ul></aside>
+  <main>
+    <div class="exp-header">  <span class="exp-id">E5</span>  <span style="color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">EXPERIMENT</span></div><h1>E5 — α-schedule stress test</h1>
+    
+<div class="subtitle">Stress test on the α annealing schedule for the update-side novelty term. Tests whether α persistence triggers the RepExp degenerate "novel-but-invalid" failure mode (chase novelty so hard the policy stops being correct).</div>
+
+<h2>Design</h2>
+<table>
+  <thead><tr><th>Schedule</th><th>α at step 0</th><th>α at step T</th><th>Anneal-to-step</th><th>n seeds</th></tr></thead>
+  <tbody>
+    <tr><td>constant high</td><td class="num">0.3</td><td class="num">0.3</td><td class="num">0 (no anneal)</td><td class="num">3</td></tr>
+    <tr><td>anneal early</td><td class="num">0.3</td><td class="num">0.0</td><td class="num">20</td><td class="num">3</td></tr>
+    <tr><td>anneal long</td><td class="num">0.5</td><td class="num">0.05</td><td class="num">40</td><td class="num">3</td></tr>
+  </tbody>
+</table>
+<p>All arms: AC1 · 512 rollouts/step · 50 epochs · <code>PUCT_C_REP=1.0, UPDATE_NOVELTY_SHARED_A=1</code>.</p>
+
+<h2>Hypotheses</h2>
+<ul>
+  <li><strong>Constant high</strong> should show late-training degeneracy: the policy keeps being pushed toward novel directions long after the reward signal stops finding anything useful. Look for <code>frac_valid</code> (rollouts with correctness &gt; 0) decreasing late in training as the policy invents novel-but-broken outputs.</li>
+  <li><strong>Anneal early</strong> is the safe bet — give the policy a sharp exploration kick early, then let it commit. Should match selection-only by step 30 since α=0 by then.</li>
+  <li><strong>Anneal long</strong> is the ambitious bet — bigger early kick (α=0.5) but gradually taper. Tests whether more aggressive exploration upfront pays off if you anneal back down.</li>
+</ul>
+
+<h2>Primary DV</h2>
+<ol>
+  <li><strong>frac_valid trajectory</strong> — does any arm see correctness collapse? (signature of degenerate novelty chasing)</li>
+  <li><strong>Final best reward</strong> — does any arm meaningfully beat selection-only?</li>
+  <li><strong>Drift trajectory</strong> — do the three schedules produce qualitatively different drift curves, or do they converge?</li>
+</ol>
+
+<h2>Status</h2>
+<div class="callout warn">
+  <strong>Queued.</strong> Slurm array <code>1762456_[0-8]</code>, qos=high, 3 GPUs each. Pending behind <code>ztl</code>. ~27 GPU-days.
+</div>
+
+<h2>What we'd learn</h2>
+<p>If <strong>constant-high crashes</strong> but anneal-early matches selection-only → the schedule is the load-bearing detail, not α magnitude. Publish anneal-early as the recipe.</p>
+<p>If <strong>anneal-long beats anneal-early</strong> → upfront exploration pays off; recommend a stronger initial α.</p>
+<p>If <strong>all three give the same result</strong> → α magnitude doesn't matter much in this regime; the term is either subtractively-small or saturating somewhere.</p>
+
+    <div class="exp-nav"><a href="e4-shared-vs-sep.html"><div class="dir">← Previous</div><div class="ttl">E4 — Shared vs separate A</div></a><a class="next" href="leaderboards.html"><div class="dir">Next →</div><div class="ttl">Cross-task leaderboards</div></a></div>
+  </main>
+</div>
+
+<footer>
+  Repo: <a href="https://github.com/EdwardoSunny/rep-ttt">github.com/EdwardoSunny/rep-ttt</a> on <code>method-rep-novelty</code>.
+</footer>
+</body>
+</html>

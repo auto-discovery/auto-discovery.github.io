@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dual-diversity ladder — overview · Auto-Discovery</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="top">
+  <div class="brand">auto-discovery<span class="dot">/</span><span class="mono">.</span></div>
+  <a class="tab" href="../index.html">Overview</a>
+  <a class="tab " href="../analysis/">Analysis</a>
+  <a class="tab active" href="../methods/">Methods</a>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar"><h4>Methods</h4><ul>
+<li><a class="" href="index.html"><span class="sidebar-tag">11 experiments</span>Overview</a></li>
+<li><a class="" href="rep-novelty.html"><span class="sidebar-tag">Method 1</span>Rep-novelty PUCT bonus</a></li>
+<li><a class="" href="qd-archive.html"><span class="sidebar-tag">Method 2</span>CVT-MAP-Elites QD archive</a></li>
+<li><a class="" href="hybrid-puctc3.html"><span class="sidebar-tag">Hybrid 1</span>QD + high warmup PUCT_C</a></li>
+<li><a class="" href="hybrid-visit.html"><span class="sidebar-tag">Hybrid 2</span>QD + visit-count cell bonus</a></li>
+<li><a class="active" href="dual-diversity.html"><span class="sidebar-tag">Method 3</span>overview</a></li>
+<li><a class="" href="e0-batch-gate.html"><span class="sidebar-tag">E0</span>Batch-confound gate</a></li>
+<li><a class="" href="e1-parent-sensitivity.html"><span class="sidebar-tag">E1</span>Parent-sensitivity probe</a></li>
+<li><a class="" href="e2-descriptor-validity.html"><span class="sidebar-tag">E2</span>Descriptor validity</a></li>
+<li><a class="" href="e3-2x2.html"><span class="sidebar-tag">E3</span>Selection × update 2×2</a></li>
+<li><a class="" href="e4-shared-vs-sep.html"><span class="sidebar-tag">E4</span>Shared vs separate A</a></li>
+<li><a class="" href="e5-alpha-sweep.html"><span class="sidebar-tag">E5</span>α-schedule stress test</a></li>
+<li><a class="" href="leaderboards.html"><span class="sidebar-tag">Summary</span>Cross-task leaderboards</a></li>
+</ul></aside>
+  <main>
+    <div class="exp-header">  <span class="exp-id">Method 3</span>  <span style="color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">OVERVIEW</span></div><h1>Dual-diversity ladder — overview</h1>
+    
+<div class="subtitle">Shared-signal dual diversity — one rep-novelty signal computed once, consumed in BOTH selection (existing PUCT bonus) AND update (new α·z(nov) advantage adjustment, outside the entropic tilt). Six experiments arranged as a gated ladder; cheap probes go first so a failure can kill the project before the expensive 20-job 2×2 burns compute.</div>
+
+<h2>The method</h2>
+<div class="card">
+<p>Two consumers of the same novelty signal:</p>
+<pre>SELECTION (existing rep-novelty PUCT bonus, unchanged):
+  score(i) = Q(i) + puct_c·scale·P(i)·√(1+T)/(1+n[i])
+           + puct_c_rep · scale · z(novelty(i))
+
+UPDATE (new — outside the entropic tilt):
+  A_final = A_entropic(R)  +  α(t) · z(novelty)</pre>
+<p><strong>Why outside the exp.</strong> Adding novelty as <code>R+α·nov</code> inside the entropic estimator would be damped by the adaptive-β KL budget exactly where novelty creates spread. Adding to the <em>final</em> advantage lets the entropic estimator do its thing on reward, then nudges the gradient toward novel states on top.</p>
+<p><strong>Reward-gated.</strong> Invalid rollouts (<code>correctness ≤ 0</code>) get 0 novelty advantage. All-bad groups skip the term entirely (no novelty credit when there's no valid signal to compare against).</p>
+<p><strong>α annealed.</strong> Linear from <code>α_init</code> at step 0 to <code>α_final</code> at <code>anneal_to_step</code> (clamped after). "Explore early, commit late" — un-annealed novelty risks degenerating into rep-novel-but-invalid rollouts (RepExp's high-temperature failure mode).</p>
+<p>Code: <code>ttt_discover/methods/update_novelty.py</code>. Plumbed via <code>UPDATE_NOVELTY_{ALPHA, FINAL, ANNEAL_TO, SHARED_A}</code>.</p>
+</div>
+
+<h2>Ladder structure (gates)</h2>
+<pre>E0 (batch gate, AC1, drift)  ──fail──→  stop / pivot to E2
+  │ pass
+E1 (parent-sensitivity)      ──insensitive──→  update-side is load-bearing
+  │                          └──sensitive────→  fix reuse first; dual may be overkill
+E2 (descriptor validity)     ──disagree──────→  new descriptor becomes headline
+  │ both pass
+E3 (2×2 interaction test)    ──no interaction→  simplify
+  │ interaction present
+E4 (shared vs separate A)
+  │
+E5 (α-anneal / validity stress)</pre>
+
+<h2>Held-fixed design choices</h2>
+<ul>
+  <li><strong>Drift, not reward, as the primary DV at 512 rollouts</strong> — reward is low-power at full batch (Phase A's seed 0 already hit 0.380965 with no method).</li>
+  <li><strong>AC1, not erdos, as the testbed</strong> — erdos can't discriminate methods once the batch closes its headroom.</li>
+  <li><strong>AC2 excluded</strong> — it's an objective-side regression (W4 in the analysis), not a selection/update problem.</li>
+</ul>
+
+<h2>The 6 experiments</h2>
+<ul class="findings">
+  <li><span class="h-label">E0</span><a href="e0-batch-gate.html">Batch-confound gate</a> — does selection-only rep-novelty still help at 512 rollouts/step?</li>
+  <li><span class="h-label">E1</span><a href="e1-parent-sensitivity.html">Parent-sensitivity probe</a> — are rollouts actually sensitive to parent choice? (no training)</li>
+  <li><span class="h-label">E2</span><a href="e2-descriptor-validity.html">Descriptor validity</a> — does our 64-d rep distinguish structurally different objects? (no training)</li>
+  <li><span class="h-label">E3</span><a href="e3-2x2.html">Selection × update 2×2</a> — the headline test: is "both" > "either alone"?</li>
+  <li><span class="h-label">E4</span><a href="e4-shared-vs-sep.html">Shared vs separate A</a> — does sharing the LinUCB tracker between selection + update matter?</li>
+  <li><span class="h-label">E5</span><a href="e5-alpha-sweep.html">α-schedule stress test</a> — constant-high vs anneal-early vs anneal-long.</li>
+</ul>
+
+<h2>Status</h2>
+<div class="callout warn">
+  <strong>30 jobs queued on qos=high.</strong> All pending behind the user's <code>ztl</code> Llama training (16-GPU cap). Each is 3 GPUs × 3 days. Will dispatch as <code>ztl</code> array tasks throttle through. E0 first (cheapest gate), E3 once code-path is validated, E4/E5 if E3 vindicates the bet.
+</div>
+
+    <div class="exp-nav"><a href="hybrid-visit.html"><div class="dir">← Previous</div><div class="ttl">Hybrid 2 — QD + visit-count cell bonus</div></a><a class="next" href="e0-batch-gate.html"><div class="dir">Next →</div><div class="ttl">E0 — Batch-confound gate</div></a></div>
+  </main>
+</div>
+
+<footer>
+  Repo: <a href="https://github.com/EdwardoSunny/rep-ttt">github.com/EdwardoSunny/rep-ttt</a> on <code>method-rep-novelty</code>.
+</footer>
+</body>
+</html>
